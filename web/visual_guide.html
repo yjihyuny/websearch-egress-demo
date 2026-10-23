@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NemoClaw + OpenShell Visual Guide</title>
+<style>
+:root{--bg:#f6f7f8;--panel:#fff;--ink:#16191d;--sub:#5b636b;--line:#d5d9dd;--green:#76b900;--blue:#1f6feb;--amber:#b7791f;--red:#d1344a;--teal:#0f8f84;--purple:#7c4dcc;--okbg:#e6f4d0;--nobg:#fde3e6;--code:#eef0f2}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0d0d0d;--panel:#17191c;--ink:#e8eaed;--sub:#9aa0a6;--line:#3a3f45;--green:#9bd14a;--blue:#5aa8ff;--amber:#e3b341;--red:#ff6b6b;--teal:#3fd0c0;--purple:#bd9cf7;--okbg:#22300f;--nobg:#3a1a1f;--code:#101214;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#0d0d0d;--panel:#17191c;--ink:#e8eaed;--sub:#9aa0a6;--line:#3a3f45;--green:#9bd14a;--blue:#5aa8ff;--amber:#e3b341;--red:#ff6b6b;--teal:#3fd0c0;--purple:#bd9cf7;--okbg:#22300f;--nobg:#3a1a1f;--code:#101214;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,sans-serif;padding-inline:16px}
+.wrap{max-width:980px;margin:0 auto;padding-block:24px 64px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border-bottom:3px solid var(--green);padding-bottom:12px}
+h1{margin:0;font-size:1.6rem}h2{margin:40px 0 4px;font-size:1.25rem}.lead{color:var(--sub);margin:0 0 14px}
+nav{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}nav a{padding:4px 10px;border:1px solid var(--line);border-radius:99px;color:var(--ink);text-decoration:none;font-size:.85rem;background:var(--panel)}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:4px 10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+code,pre{background:var(--code);border-radius:6px;font:13px ui-monospace,monospace}code{padding:1px 5px}pre{padding:10px;overflow-x:auto;margin:6px 0}
+svg{max-width:100%;height:auto;display:block}svg text{fill:var(--ink);font:12px system-ui}svg .s{fill:var(--sub)}
+.box{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
+.tag{display:inline-block;font-size:.72rem;padding:1px 7px;border-radius:99px;border:1px solid var(--line);color:var(--sub)}
+label{display:block;font-size:.8rem;color:var(--sub);margin-bottom:2px}
+select,input{font:inherit;width:100%;padding:5px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.verdict{margin-top:12px;padding:12px;border-radius:8px;font-weight:600}.ok{background:var(--okbg);border:1px solid var(--green)}.no{background:var(--nobg);border:1px solid var(--red)}
+.step{display:grid;grid-template-columns:34px 1fr;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.n{width:28px;height:28px;border-radius:50%;background:var(--green);color:#111;font-weight:700;display:grid;place-items:center}
+.copy{float:right;margin-left:8px}.step>div:last-child{min-width:0}pre{white-space:pre-wrap;word-break:break-all}
+table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}.scroll{overflow-x:auto}
+.mod{border-left:4px solid var(--c);padding-left:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div><h1>NemoClaw + OpenShell, visually</h1><div class="lead" style="margin:0">Secure, always-on agents: what runs where, and who decides what.</div></div>
+<button id="theme" aria-label="Toggle theme">Theme</button></header>
+<nav><a href="#stack">Stack</a><a href="#trifecta">Trifecta</a><a href="#policy">Policy explorer</a><a href="#flow">Request flow</a><a href="#install">Install &amp; e2e</a><a href="#course">Course map</a></nav>
+
+<h2 id="stack">1. The stack</h2>
+<p class="lead">Four layers. NemoClaw sets up, OpenShell encloses, OpenClaw runs inside, the model is just an endpoint.</p>
+<div class="card"><svg viewBox="0 0 900 330" role="img" aria-label="Stack diagram: NemoClaw orchestrates OpenShell, which encloses the OpenClaw agent; inference goes through inference.local to the model">
+<rect class="box" x="10" y="10" width="880" height="310" rx="12" style="stroke:var(--green);stroke-dasharray:6 4"/>
+<text x="24" y="32" style="font-weight:700;fill:var(--green)">NemoClaw: onboarding, lifecycle, blueprint, policy presets</text>
+<rect class="box" x="40" y="50" width="560" height="250" rx="10" style="stroke:var(--blue)"/>
+<text x="54" y="72" style="font-weight:700;fill:var(--blue)">OpenShell sandbox (Landlock + seccomp + netns)</text>
+<rect class="box" x="64" y="90" width="250" height="120" rx="8" style="stroke:var(--purple)"/>
+<text x="78" y="112" style="font-weight:700">OpenClaw agent</text><text class="s" x="78" y="134">session history</text><text class="s" x="78" y="152">workspace files</text><text class="s" x="78" y="170">tools &amp; skills</text><text class="s" x="78" y="188">triggers (always-on)</text>
+<rect class="box" x="340" y="90" width="236" height="120" rx="8" style="stroke:var(--amber)"/>
+<text x="354" y="112" style="font-weight:700">Policy engine</text><text class="s" x="354" y="134">filesystem: ro / rw paths</text><text class="s" x="354" y="152">process: user, syscalls</text><text class="s" x="354" y="170">network: binary+host+</text><text class="s" x="354" y="188">port+method+path</text>
+<rect class="box" x="64" y="230" width="512" height="50" rx="8" style="stroke:var(--teal)"/>
+<text x="78" y="252" style="font-weight:700">Gateway / proxy</text><text class="s" x="78" y="270">deny by default · live updates · audit log of allows and denies</text>
+<path d="M314 150h26" stroke="var(--sub)" stroke-width="2" fill="none"/><path d="M450 210v20" stroke="var(--sub)" stroke-width="2" fill="none"/>
+<path d="M576 255h100" stroke="var(--sub)" stroke-width="2" fill="none"/>
+<rect class="box" x="680" y="60" width="190" height="80" rx="8"/><text x="696" y="86" style="font-weight:700">Inference</text><text class="s" x="696" y="106">inference.local</text><text class="s" x="696" y="124">→ Nemotron / local vLLM</text>
+<rect class="box" x="680" y="170" width="190" height="80" rx="8"/><text x="696" y="196" style="font-weight:700">Allowed hosts</text><text class="s" x="696" y="216">npm, pypi, HF, brave…</text><text class="s" x="696" y="234">(presets, opt-in)</text>
+<path d="M676 255h4M676 255l-0 0" stroke="var(--sub)"/><path d="M576 240L680 215" stroke="var(--sub)" stroke-width="2" fill="none"/><path d="M576 255L680 110" stroke="var(--sub)" stroke-width="2" fill="none"/>
+</svg></div>
+
+<h2 id="trifecta">2. Why enforcement lives below the model</h2>
+<p class="lead">Lethal trifecta: risk appears when all three are present. Click a leg to remove it.</p>
+<div class="card"><div class="grid" id="tri"></div><div class="verdict" id="triv"></div></div>
+
+<h2 id="policy">3. Policy explorer</h2>
+<p class="lead">Evaluates a request against the course's hardened baseline policy (snapshot 2026-06-17; abridged). Try <code>curl</code> → <code>integrate.api.nvidia.com</code>, then <code>openclaw</code> → same host with <code>DELETE</code>.</p>
+<div class="card"><div class="grid">
+<div><label>Binary</label><select id="pb"><option>/usr/local/bin/openclaw</option><option>/usr/bin/curl</option><option>/usr/bin/python3</option><option>/usr/bin/node</option></select></div>
+<div><label>Host</label><select id="ph"><option>integrate.api.nvidia.com</option><option>inference.local</option><option>registry.npmjs.org</option><option>clawhub.ai</option><option>github.com</option><option>api.telegram.org</option><option>evil.example.com</option></select></div>
+<div><label>Port</label><input id="pp" value="443"></div>
+<div><label>Method</label><select id="pm"><option>POST</option><option>GET</option><option>PUT</option><option>DELETE</option></select></div>
+<div><label>Path</label><input id="pa" value="/v1/chat/completions"></div></div>
+<div class="verdict" id="pv"></div>
+<details><summary>Policy data (abridged)</summary><pre id="pj"></pre></details></div>
+
+<h2 id="flow">4. One request, step by step</h2>
+<p class="lead">Agent calls the model. Press next.</p>
+<div class="card"><div id="fl" class="scroll"></div><button id="fn">Next step</button> <button id="fr">Reset</button></div>
+
+<h2 id="install">5. Install and e2e checklist</h2>
+<p class="lead">Details and caveats live in <code>E2E_GUIDE.md</code>. Tick as you go (saved in this browser).</p>
+<div class="card" id="ck"></div>
+
+<h2 id="course">6. Course map</h2>
+<p class="lead">NVIDIA DLI "Securing Agents with OpenShell and NemoClaw": 4 modules, 12 lessons. Modules 3-4 need the live launchable.</p>
+<div class="grid" id="cm"></div>
+<p class="lead" style="margin-top:28px">Sources: NVIDIA OpenShell / NemoClaw blogs and docs; repo <code>NVDLI/NemoClawDLI</code>. NemoClaw is alpha, so verify versions upstream.</p>
+</div>
+<script>
+const $=s=>document.querySelector(s),H=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
+// theme
+const root=document.documentElement;try{const t=localStorage.getItem('th');if(t)root.dataset.theme=t}catch(e){}
+$('#theme').onclick=()=>{const dark=root.dataset.theme?root.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;root.dataset.theme=dark?'light':'dark';try{localStorage.setItem('th',root.dataset.theme)}catch(e){}};
+// trifecta
+const legs=[['Untrusted input','web pages, emails, tool output','var(--amber)'],['Access to secrets','API keys, files, tokens','var(--purple)'],['Outbound channel','network egress, messages','var(--red)']];const on=[1,1,1];
+function tri(){const g=$('#tri');g.innerHTML='';legs.forEach((l,i)=>{const b=H('button','card',`<b style="color:${l[2]}">${l[0]}</b><br><span class="tag">${on[i]?'present':'removed'}</span><br><small>${l[1]}</small>`);b.style.opacity=on[i]?1:.45;b.onclick=()=>{on[i]^=1;tri()};g.append(b)});
+const all=on.every(Boolean);const v=$('#triv');v.className='verdict '+(all?'no':'ok');v.textContent=all?'Exfiltration path exists. A prompt injection can read secrets and send them out.':'Path broken. '+(!on[2]?'Network policy (OpenShell) removed the outbound leg.':'Remaining legs alone cannot leak.')}
+tri();
+// policy
+const P={fs:{},net:{
+ nvidia:{b:['/usr/local/bin/openclaw'],e:[['integrate.api.nvidia.com',443,[['POST','/v1/chat/completions'],['POST','/v1/embeddings'],['GET','/v1/models'],['GET','/v1/models/**']]]]},
+ managed_inference:{b:['/usr/local/bin/openclaw','/usr/local/bin/node','/usr/bin/node','/usr/bin/curl','/usr/bin/python3'],e:[['inference.local',443,[['GET','/**'],['POST','/**']]]]},
+ clawhub:{b:['/usr/local/bin/openclaw','/usr/local/bin/node'],e:[['clawhub.ai',443,[['GET','/**'],['POST','/**']]]]},
+ npm_registry:{b:['/usr/local/bin/openclaw'],e:[['registry.npmjs.org',443,[['GET','/**']]]]}}};
+$('#pj').textContent=JSON.stringify(P.net,null,1);
+const glob=(g,p)=>new RegExp('^'+g.replace(/[.+?^${}()|[\]\\]/g,'\\$&').replace(/\*\*/g,'.*').replace(/\*/g,'[^/]*')+'$').test(p);
+function ev(){const b=$('#pb').value,h=$('#ph').value,port=+$('#pp').value,m=$('#pm').value,p=$('#pa').value;let why='No policy block lists this host, so the default is deny.';
+ for(const [n,r] of Object.entries(P.net))for(const [host,pt,rules] of r.e){if(host!==h||pt!==port)continue;
+  if(!r.b.includes(b)){why=`Host allowed in "${n}" but binary ${b} is not on its list.`;continue}
+  if(rules.some(([mm,pp])=>mm===m&&glob(pp,p)))return [1,`ALLOW via "${n}": ${b} → ${m} ${h}:${port}${p}`];why=`Binary and host match "${n}", but ${m} ${p} is not an allowed method+path.`}
+ return [0,'DENY: '+why+' (logged in the audit trail; proxy returns 403)']}
+function pol(){const [ok,t]=ev();const v=$('#pv');v.className='verdict '+(ok?'ok':'no');v.textContent=t}
+['pb','ph','pp','pm','pa'].forEach(i=>$('#'+i).addEventListener('input',pol));pol();
+// flow
+const steps=[['Agent decides','OpenClaw (inside sandbox) wants an LLM answer and issues an HTTPS call.'],['Network namespace','Direct egress is impossible; traffic can only leave through the OpenShell proxy.'],['Policy check','Proxy matches binary + host + port + method + path against the policy.'],['Route','Allowed: inference.local is routed to the configured provider (hosted or local). Denied: 403 and an audit entry.'],['Response','Model reply returns to the agent. Credentials stay with the gateway, not the agent.'],['Audit','Every allow and deny is recorded; widen policy live with <code>nemoclaw &lt;name&gt; policy-add</code>.']];let si=0;
+function fl(){const f=$('#fl');f.innerHTML='';steps.forEach((s,i)=>{const d=H('div','step',`<div class="n" style="opacity:${i<=si?1:.25}">${i+1}</div><div style="opacity:${i<=si?1:.35}"><b>${s[0]}</b><br>${s[1]}</div>`);f.append(d)})}
+$('#fn').onclick=()=>{si=Math.min(si+1,steps.length-1);fl()};$('#fr').onclick=()=>{si=0;fl()};fl();
+// checklist
+const items=[['Preflight','bash verify_env.sh'],['Install','curl -fsSL https://www.nvidia.com/nemoclaw.sh | NEMOCLAW_INSTALL_TAG=v0.0.55 bash'],['Onboard a named sandbox','nemoclaw onboard'],['List sandboxes','nemoclaw list && openshell sandbox list'],['Connect','nemoclaw <name> connect'],['Inspect presets','nemoclaw <name> policy-list'],['Dry-run a preset','nemoclaw <name> policy-add github --dry-run'],['Dump live policy','openshell policy get <name> --full'],['Watch logs for denies','nemoclaw <name> logs --follow'],['Snapshot','nemoclaw <name> snapshot create --name demo'],['Clean up','nemoclaw <name> destroy --yes']];
+let st={};try{st=JSON.parse(localStorage.getItem('ck')||'{}')}catch(e){}
+items.forEach((it,i)=>{const d=H('div','step',`<div><input type="checkbox" style="width:auto" ${st[i]?'checked':''}></div><div><button class="copy">Copy</button><b>${it[0]}</b><pre>${it[1].replace(/</g,'&lt;')}</pre></div>`);
+ d.querySelector('input').onchange=e=>{st[i]=e.target.checked;try{localStorage.setItem('ck',JSON.stringify(st))}catch(_){}};
+ d.querySelector('.copy').onclick=e=>{try{navigator.clipboard.writeText(it[1]);e.target.textContent='Copied'}catch(_){e.target.textContent='Select text'}};$('#ck').append(d)});
+// course
+const mods=[['1 Build the agent loop','var(--blue)',['The Agent','ReAct loop','Tools at scale']],['2 Coordinate and ground','var(--teal)',['Workflows / routing','RAG index agent','Deep agents']],['3 Connect and run on NemoClaw','var(--green)',['Connect NemoClaw','OpenClaw workspace','Always-on']],['4 Constrain and ship','var(--red)',['OpenShell safety','Modern CLIs','Going further']]];
+mods.forEach(m=>{const d=H('div','card mod',`<b>${m[0]}</b><ul style="margin:6px 0 0;padding-left:18px">${m[2].map(x=>`<li>${x}</li>`).join('')}</ul>`);d.style.setProperty('--c',m[1]);$('#cm').append(d)});
+</script>
+</body>
+</html>

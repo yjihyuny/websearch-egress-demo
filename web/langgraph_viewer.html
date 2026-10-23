@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LangGraph in OpenShell Viewer</title>
+<style>
+:root{--bg:#f6f7f8;--panel:#fff;--ink:#16191d;--sub:#5b636b;--line:#d5d9dd;--green:#5e9400;--blue:#1f6feb;--amber:#a86a00;--red:#d1344a;--purple:#7c4dcc;--okbg:#e6f4d0;--nobg:#fde3e6;--warnbg:#fff1cf;--code:#eef0f2}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0d0d0d;--panel:#17191c;--ink:#e8eaed;--sub:#9aa0a6;--line:#3a3f45;--green:#9bd14a;--blue:#5aa8ff;--amber:#e3b341;--red:#ff6b6b;--purple:#bd9cf7;--okbg:#22300f;--nobg:#3a1a1f;--warnbg:#3a2e10;--code:#101214;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#0d0d0d;--panel:#17191c;--ink:#e8eaed;--sub:#9aa0a6;--line:#3a3f45;--green:#9bd14a;--blue:#5aa8ff;--amber:#e3b341;--red:#ff6b6b;--purple:#bd9cf7;--okbg:#22300f;--nobg:#3a1a1f;--warnbg:#3a2e10;--code:#101214;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,sans-serif;padding-inline:16px}
+.wrap{max-width:1060px;margin:0 auto;padding-block:20px 60px}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;border-bottom:3px solid var(--green);padding-bottom:10px}
+h1{margin:0;font-size:1.4rem}h2{font-size:1.05rem;margin:0 0 6px}.sub{color:var(--sub);font-size:.85rem}
+button,select,input,textarea{font:inherit;color:var(--ink)}
+button{cursor:pointer;border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:5px 12px}button.primary{background:var(--green);color:#111;border-color:var(--green);font-weight:600}button:disabled{opacity:.5;cursor:default}
+.tabbtn[aria-selected=true]{background:var(--green);color:#111;border-color:var(--green);font-weight:600}
+select,input[type=text],textarea{width:100%;padding:5px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin:12px 0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.sp{flex:1}
+.cols{display:grid;gap:12px;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}@media(max-width:820px){.cols{grid-template-columns:1fr}}
+code,pre{background:var(--code);border-radius:6px;font:12.5px ui-monospace,monospace}code{padding:1px 5px}pre{padding:9px;overflow-x:auto;margin:6px 0;white-space:pre-wrap;word-break:break-word}
+.verdict{padding:9px 12px;border-radius:8px;font-weight:600;margin-top:8px}.ok{background:var(--okbg);border:1px solid var(--green)}.no{background:var(--nobg);border:1px solid var(--red)}.warn{background:var(--warnbg);border:1px solid var(--amber)}
+.tag{display:inline-block;font-size:.72rem;padding:1px 8px;border-radius:99px;border:1px solid var(--line);color:var(--sub)}
+.chip{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.8rem;margin:2px 4px 2px 0;border:1px solid var(--line)}.chip.a{background:var(--okbg);border-color:var(--green)}.chip.d{background:var(--nobg);border-color:var(--red)}.chip.n{background:var(--warnbg);border-color:var(--amber)}
+.y span{display:block;padding:0 4px}.y .hit{background:var(--okbg);border-left:3px solid var(--green)}.y .miss{background:var(--nobg);border-left:3px solid var(--red)}.y .near{background:var(--warnbg);border-left:3px solid var(--amber)}
+svg{width:100%;height:auto;display:block}svg text{fill:var(--ink);font:13px system-ui}svg .s{fill:var(--sub);font-size:11px}
+.nd rect{fill:var(--panel);stroke:var(--line);stroke-width:2}.nd.on rect{stroke:var(--green);stroke-width:4;fill:var(--okbg)}.nd.deny rect{stroke:var(--red);stroke-width:4;fill:var(--nobg)}.nd.warn rect{stroke:var(--amber);stroke-width:4;fill:var(--warnbg)}
+.ed{stroke:var(--line);stroke-width:2.5;fill:none}.ed.on{stroke:var(--green);stroke-width:4}
+.steps{display:flex;flex-direction:column;gap:6px}.st{display:flex;gap:8px;align-items:flex-start;padding:6px 8px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:var(--panel)}.st.cur{border-color:var(--green);background:var(--okbg)}.st b{min-width:22px}
+.blk{font-size:.8rem;color:var(--sub);margin-top:6px}[hidden]{display:none!important}.chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}.chips code{border:1px solid var(--line)}
+.ev{display:flex;gap:8px;padding:6px 8px;border-radius:8px;margin:4px 0;border:1px solid var(--line);font:12.5px ui-monospace,monospace;word-break:break-all}.ev.a{background:var(--okbg);border-color:var(--green)}.ev.d{background:var(--nobg);border-color:var(--red)}.ev b{min-width:70px}
+label{display:block;font-size:.78rem;color:var(--sub);margin-bottom:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div><h1>LangGraph inside OpenShell</h1><div class="sub">Agents run in sandbox <code>egress-demo</code> (code: <code>agent/langgraph_demo.py</code>). Predictions use the <b>live</b> policy when the live server is running (<span id="pvinfo">built-in snapshot</span>). Replays of saved traces work offline.</div></div><button id="theme">Theme</button></header>
+<div class="row" id="tabs" style="margin:12px 0"></div>
+
+<section id="t-run">
+<div class="card"><h2>Run a prompt live in the sandbox</h2>
+<div class="sub" id="livestat">Checking for the live runner...</div>
+<div class="row" style="margin-top:6px"><div class="sp"><label>Sample prompts</label><select id="samp"></select></div><div><label>Agent graph</label><select id="graphsel"><option value="react">react: agent ⇄ tools (web, files, git)</option><option value="research">research: planner → researchers → synthesizer (web)</option>
+</select></div>
+<div><label>Grounding instructions</label><select id="grdsel"><option value="1">ON: cite tool results, admit failures</option><option value="0">OFF: no system prompt</option></select></div>
+<div><label>Tool output (web graphs)</label><select id="toolsel"><option value="0">diagnostic: readable text + why it failed</option><option value="1">legacy: raw 300 chars, opaque errors</option></select></div></div>
+<label style="margin-top:6px">Prompt</label>
+<textarea id="lp" rows="3" maxlength="700">Use http_get on https://pypi.org/pypi/idna/json and tell me the latest version of idna. Be brief.</textarea>
+<div class="row" style="margin-top:6px"><button class="primary" id="lrun" disabled>Run in sandbox</button><span class="sub" id="lmsg"></span></div>
+<div class="sub" id="lexp" style="margin-top:4px"></div></div>
+
+<div class="card"><div class="row"><div><label>Run (replay)</label><select id="sel"></select></div><span class="tag" id="gtag"></span><div class="sp"></div>
+<button id="prev">Prev</button><button id="next" class="primary">Next step</button><button id="play">Play</button><button id="reset">Reset</button><button id="rdel" title="Remove the selected run from this list">Delete replay</button><button id="rdelall" title="Remove every run from this list">Delete all</button></div>
+<div class="sub" id="prompt" style="margin-top:6px"></div></div>
+
+<div class="cols">
+<div>
+<div class="card"><h2>Graph structure</h2>
+<svg id="gsvg" viewBox="0 0 700 260" role="img" aria-label="graph structure"></svg>
+<div class="sub">Green = where the run is now. Red = a tool call or fetch was blocked by the sandbox policy.</div></div>
+<div class="card"><h2>Steps</h2><div class="steps" id="steps"></div></div>
+</div>
+<div><div class="card"><h2 id="dtitle">Step</h2><div id="detail"></div></div></div>
+</div>
+
+<div class="card" id="obs" hidden><h2>Network events the sandbox recorded for this live run <span class="tag" id="obscnt"></span></h2><div class="sub" id="obsll"></div><div id="obsbody"></div></div>
+
+<div class="card"><h2>Try your own tool call (what the policy would say)</h2>
+<div class="row"><div><label>Tool</label><select id="wt"><option>http_get</option><option>write_file</option><option>read_file</option><option>git</option></select></div>
+<div class="sp"><label>URL, path, or git command</label><input type="text" id="wv" value="https://api.github.com/"></div><button id="wgo" class="primary">Check</button></div>
+<div id="wout"></div></div>
+
+<details class="card"><summary><b>Offline: paste a trace JSON</b></summary><div class="sub" style="margin-top:6px">Only needed when you open this page as a plain file (no live runner). Produce a trace with <code>python3 langgraph_demo.py json</code> in the sandbox (see the README, section The agent) and paste the array here.</div>
+<textarea id="tin" rows="3" placeholder='[{"task":"...","prompt":"...","graph":"react","events":[...]}]'></textarea><div class="row" style="margin-top:6px"><button id="tload">Load</button><span class="sub" id="tmsg"></span></div></details>
+</section>
+
+<section id="t-pol" hidden><div id="polmount"></div></section>
+<section id="t-diff" hidden><div id="diffmount"></div></section>
+</div>
+
+<script src="policy_tools.js"></script>
+<script id="yamltext" type="text/plain">version: 1
+filesystem_policy:
+  include_workdir: true
+  read_only:
+  - /usr
+  - /lib
+  - /dev/urandom
+  - /app
+  - /etc
+  - /var/log
+  - /run/nvidia-persistenced
+  read_write:
+  - /tmp
+  - /dev/null
+  - /sandbox/.openclaw
+  - /sandbox/.nemoclaw
+  - /home/linuxbrew
+  - /proc
+  - /sandbox
+  - /dev/nvidiactl
+  - /dev/nvidia-uvm
+  - /dev/nvidia-uvm-tools
+  - /dev/nvidia0
+landlock:
+  compatibility: best_effort
+process:
+  run_as_user: sandbox
+  run_as_group: sandbox
+network_policies:
+  brave:
+    name: brave
+    endpoints:
+    - host: api.search.brave.com
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+      - allow:
+          method: POST
+          path: /**
+    binaries:
+    - path: /usr/local/bin/node
+    - path: /usr/bin/node
+    - path: /usr/bin/curl
+  brew:
+    name: brew
+    endpoints:
+    - host: formulae.brew.sh
+      port: 443
+      tls: skip
+      access: full
+    - host: github.com
+      port: 443
+      tls: skip
+      access: full
+    - host: ghcr.io
+      port: 443
+      tls: skip
+      access: full
+    - host: pkg-containers.githubusercontent.com
+      port: 443
+      tls: skip
+      access: full
+    - host: objects.githubusercontent.com
+      port: 443
+      tls: skip
+      access: full
+    - host: raw.githubusercontent.com
+      port: 443
+      tls: skip
+      access: full
+    binaries:
+    - path: /usr/bin/curl
+    - path: /usr/bin/git
+    - path: /usr/local/bin/brew
+    - path: /home/linuxbrew/.linuxbrew/bin/brew
+    - path: /home/linuxbrew/.linuxbrew/bin/*
+    - path: /home/linuxbrew/.linuxbrew/Homebrew/bin/*
+  clawhub:
+    name: clawhub
+    endpoints:
+    - host: clawhub.ai
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+      - allow:
+          method: POST
+          path: /**
+    binaries:
+    - path: /usr/local/bin/openclaw
+    - path: /usr/local/bin/node
+  huggingface:
+    name: huggingface
+    endpoints:
+    - host: huggingface.co
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+    - host: cdn-lfs.huggingface.co
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+    - host: router.huggingface.co
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+      - allow:
+          method: POST
+          path: /**
+    binaries:
+    - path: /usr/local/bin/python3
+    - path: /usr/local/bin/node
+  managed_inference:
+    name: managed_inference
+    endpoints:
+    - host: inference.local
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+      - allow:
+          method: POST
+          path: /**
+    binaries:
+    - path: /usr/local/bin/openclaw
+    - path: /usr/local/bin/node
+    - path: /usr/bin/node
+    - path: /usr/bin/curl
+    - path: /usr/bin/python3
+  npm_registry:
+    name: npm_registry
+    endpoints:
+    - host: registry.npmjs.org
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+    binaries:
+    - path: /usr/local/bin/openclaw
+  npm_yarn:
+    name: npm_yarn
+    endpoints:
+    - host: registry.npmjs.org
+      port: 443
+      tls: skip
+      access: full
+    - host: registry.yarnpkg.com
+      port: 443
+      tls: skip
+      access: full
+    binaries:
+    - path: /usr/local/bin/npm*
+    - path: /usr/local/bin/npx*
+    - path: /usr/local/bin/node*
+    - path: /usr/local/bin/yarn*
+    - path: /usr/bin/npm*
+    - path: /usr/bin/node*
+  nvidia:
+    name: nvidia
+    endpoints:
+    - host: integrate.api.nvidia.com
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: POST
+          path: /v1/chat/completions
+      - allow:
+          method: POST
+          path: /v1/completions
+      - allow:
+          method: POST
+          path: /v1/embeddings
+      - allow:
+          method: GET
+          path: /v1/models
+      - allow:
+          method: GET
+          path: /v1/models/**
+    - host: inference-api.nvidia.com
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: POST
+          path: /v1/chat/completions
+      - allow:
+          method: POST
+          path: /v1/completions
+      - allow:
+          method: POST
+          path: /v1/embeddings
+      - allow:
+          method: GET
+          path: /v1/models
+      - allow:
+          method: GET
+          path: /v1/models/**
+    binaries:
+    - path: /usr/local/bin/openclaw
+  openclaw-pricing:
+    name: openclaw-pricing
+    endpoints:
+    - host: raw.githubusercontent.com
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /BerriAI/litellm/main/model_prices_and_context_window.json
+    - host: openrouter.ai
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /api/v1/models
+    binaries:
+    - path: /usr/local/bin/node
+    - path: /usr/bin/node
+  openclaw_api:
+    name: openclaw_api
+    endpoints:
+    - host: openclaw.ai
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+      - allow:
+          method: POST
+          path: /**
+    binaries:
+    - path: /usr/local/bin/openclaw
+    - path: /usr/local/bin/node
+  openclaw_docs:
+    name: openclaw_docs
+    endpoints:
+    - host: docs.openclaw.ai
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+    binaries:
+    - path: /usr/local/bin/openclaw
+  pypi:
+    name: pypi
+    endpoints:
+    - host: pypi.org
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+      - allow:
+          method: HEAD
+          path: /**
+    - host: files.pythonhosted.org
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+      - allow:
+          method: HEAD
+          path: /**
+    binaries:
+    - path: /usr/bin/python3*
+    - path: /usr/bin/pip*
+    - path: /usr/local/bin/python3*
+    - path: /usr/local/bin/pip*
+    - path: /sandbox/.venv/bin/python*
+    - path: /sandbox/.venv/bin/pip*
+    - path: /sandbox/.uv/python/**/python*
+    - path: /sandbox/.local/bin/pip*
+</script>
+<script id="policy" type="application/json">{"version": 1, "filesystem_policy": {"include_workdir": true, "read_only": ["/usr", "/lib", "/dev/urandom", "/app", "/etc", "/var/log", "/run/nvidia-persistenced"], "read_write": ["/tmp", "/dev/null", "/sandbox/.openclaw", "/sandbox/.nemoclaw", "/home/linuxbrew", "/proc", "/sandbox", "/dev/nvidiactl", "/dev/nvidia-uvm", "/dev/nvidia-uvm-tools", "/dev/nvidia0"]}, "landlock": {"compatibility": "best_effort"}, "process": {"run_as_user": "sandbox", "run_as_group": "sandbox"}, "network_policies": {"brave": {"name": "brave", "endpoints": [{"host": "api.search.brave.com", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}, {"allow": {"method": "POST", "path": "/**"}}]}], "binaries": [{"path": "/usr/local/bin/node"}, {"path": "/usr/bin/node"}, {"path": "/usr/bin/curl"}]}, "brew": {"name": "brew", "endpoints": [{"host": "formulae.brew.sh", "port": 443, "tls": "skip", "access": "full"}, {"host": "github.com", "port": 443, "tls": "skip", "access": "full"}, {"host": "ghcr.io", "port": 443, "tls": "skip", "access": "full"}, {"host": "pkg-containers.githubusercontent.com", "port": 443, "tls": "skip", "access": "full"}, {"host": "objects.githubusercontent.com", "port": 443, "tls": "skip", "access": "full"}, {"host": "raw.githubusercontent.com", "port": 443, "tls": "skip", "access": "full"}], "binaries": [{"path": "/usr/bin/curl"}, {"path": "/usr/bin/git"}, {"path": "/usr/local/bin/brew"}, {"path": "/home/linuxbrew/.linuxbrew/bin/brew"}, {"path": "/home/linuxbrew/.linuxbrew/bin/*"}, {"path": "/home/linuxbrew/.linuxbrew/Homebrew/bin/*"}]}, "clawhub": {"name": "clawhub", "endpoints": [{"host": "clawhub.ai", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}, {"allow": {"method": "POST", "path": "/**"}}]}], "binaries": [{"path": "/usr/local/bin/openclaw"}, {"path": "/usr/local/bin/node"}]}, "huggingface": {"name": "huggingface", "endpoints": [{"host": "huggingface.co", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}]}, {"host": "cdn-lfs.huggingface.co", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}]}, {"host": "router.huggingface.co", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}, {"allow": {"method": "POST", "path": "/**"}}]}], "binaries": [{"path": "/usr/local/bin/python3"}, {"path": "/usr/local/bin/node"}]}, "managed_inference": {"name": "managed_inference", "endpoints": [{"host": "inference.local", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}, {"allow": {"method": "POST", "path": "/**"}}]}], "binaries": [{"path": "/usr/local/bin/openclaw"}, {"path": "/usr/local/bin/node"}, {"path": "/usr/bin/node"}, {"path": "/usr/bin/curl"}, {"path": "/usr/bin/python3"}]}, "npm_registry": {"name": "npm_registry", "endpoints": [{"host": "registry.npmjs.org", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}]}], "binaries": [{"path": "/usr/local/bin/openclaw"}]}, "npm_yarn": {"name": "npm_yarn", "endpoints": [{"host": "registry.npmjs.org", "port": 443, "tls": "skip", "access": "full"}, {"host": "registry.yarnpkg.com", "port": 443, "tls": "skip", "access": "full"}], "binaries": [{"path": "/usr/local/bin/npm*"}, {"path": "/usr/local/bin/npx*"}, {"path": "/usr/local/bin/node*"}, {"path": "/usr/local/bin/yarn*"}, {"path": "/usr/bin/npm*"}, {"path": "/usr/bin/node*"}]}, "nvidia": {"name": "nvidia", "endpoints": [{"host": "integrate.api.nvidia.com", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "POST", "path": "/v1/chat/completions"}}, {"allow": {"method": "POST", "path": "/v1/completions"}}, {"allow": {"method": "POST", "path": "/v1/embeddings"}}, {"allow": {"method": "GET", "path": "/v1/models"}}, {"allow": {"method": "GET", "path": "/v1/models/**"}}]}, {"host": "inference-api.nvidia.com", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "POST", "path": "/v1/chat/completions"}}, {"allow": {"method": "POST", "path": "/v1/completions"}}, {"allow": {"method": "POST", "path": "/v1/embeddings"}}, {"allow": {"method": "GET", "path": "/v1/models"}}, {"allow": {"method": "GET", "path": "/v1/models/**"}}]}], "binaries": [{"path": "/usr/local/bin/openclaw"}]}, "openclaw-pricing": {"name": "openclaw-pricing", "endpoints": [{"host": "raw.githubusercontent.com", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/BerriAI/litellm/main/model_prices_and_context_window.json"}}]}, {"host": "openrouter.ai", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/api/v1/models"}}]}], "binaries": [{"path": "/usr/local/bin/node"}, {"path": "/usr/bin/node"}]}, "openclaw_api": {"name": "openclaw_api", "endpoints": [{"host": "openclaw.ai", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}, {"allow": {"method": "POST", "path": "/**"}}]}], "binaries": [{"path": "/usr/local/bin/openclaw"}, {"path": "/usr/local/bin/node"}]}, "openclaw_docs": {"name": "openclaw_docs", "endpoints": [{"host": "docs.openclaw.ai", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}]}], "binaries": [{"path": "/usr/local/bin/openclaw"}]}, "pypi": {"name": "pypi", "endpoints": [{"host": "pypi.org", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}, {"allow": {"method": "HEAD", "path": "/**"}}]}, {"host": "files.pythonhosted.org", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}, {"allow": {"method": "HEAD", "path": "/**"}}]}], "binaries": [{"path": "/usr/bin/python3*"}, {"path": "/usr/bin/pip*"}, {"path": "/usr/local/bin/python3*"}, {"path": "/usr/local/bin/pip*"}, {"path": "/sandbox/.venv/bin/python*"}, {"path": "/sandbox/.venv/bin/pip*"}, {"path": "/sandbox/.uv/python/**/python*"}, {"path": "/sandbox/.local/bin/pip*"}]}}}</script>
+<script id="traces" type="application/json">[{"task": "fetch-allowed", "prompt": "Use http_get on https://pypi.org/pypi/idna/json and tell me the latest version of idna. Be brief.", "model": "/models/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4", "base_url": "https://inference.local/v1", "events": [{"step": 1, "node": "agent", "t": 1.54, "kind": "tool_call", "calls": [{"name": "http_get", "args": {"url": "https://pypi.org/pypi/idna/json"}}]}, {"step": 2, "node": "tools", "t": 1.63, "kind": "tool_result", "tool": "http_get", "content": "HTTP 200: {\"info\":{\"author\":null,\"author_email\":\"Kim Davies <kim+pypi@gumleaf.org>\",\"bugtrack_url\":null,\"classifiers\":[\"Development Status :: 5 - Production/Stable\",\"Intended Audience :: Developers\",\"Intended Audience :: System Administrators\",\"Operating System :: OS Independent\",\"Programming Language :: Pyth"}, {"step": 3, "node": "agent", "t": 7.35, "kind": "final", "content": "The latest version of **idna** is **3.7**."}], "graph": "react"}, {"task": "fetch-denied", "prompt": "Use http_get on https://example.com and tell me the page title. If it fails, say exactly what error you got.", "model": "/models/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4", "base_url": "https://inference.local/v1", "events": [{"step": 1, "node": "agent", "t": 0.75, "kind": "tool_call", "calls": [{"name": "http_get", "args": {"url": "https://example.com"}}]}, {"step": 2, "node": "tools", "t": 0.76, "kind": "tool_result", "tool": "http_get", "content": "ERROR: URLError: <urlopen error Tunnel connection failed: 403 Forbidden>"}, {"step": 3, "node": "agent", "t": 2.37, "kind": "final", "content": "Error: URLError: <urlopen error Tunnel connection failed: 403 Forbidden>"}], "graph": "react"}, {"task": "write-denied", "prompt": "Use write_file to write 'hi' to /etc/agent-note.txt. Report the exact result.", "model": "/models/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4", "base_url": "https://inference.local/v1", "events": [{"step": 1, "node": "agent", "t": 0.95, "kind": "tool_call", "calls": [{"name": "write_file", "args": {"path": "/etc/agent-note.txt", "text": "hi"}}]}, {"step": 2, "node": "tools", "t": 0.95, "kind": "tool_result", "tool": "write_file", "content": "ERROR: PermissionError: [Errno 13] Permission denied: '/etc/agent-note.txt'"}, {"step": 3, "node": "agent", "t": 2.31, "kind": "final", "content": "The attempt to write to **/etc/agent-note.txt** resulted in a permission error:\n\n```\nERROR: PermissionError: [Errno 13] Permission denied: '/etc/agent-note.txt'\n```"}], "graph": "react"}, {"task": "write-ok", "prompt": "Use write_file to write 'hello from langgraph' to /tmp/agent-note.txt, then report the exact result.", "model": "/models/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4", "base_url": "https://inference.local/v1", "events": [{"step": 1, "node": "agent", "t": 1.0, "kind": "tool_call", "calls": [{"name": "write_file", "args": {"path": "/tmp/agent-note.txt", "text": "hello from langgraph"}}]}, {"step": 2, "node": "tools", "t": 1.0, "kind": "tool_result", "tool": "write_file", "content": "wrote 20 bytes to /tmp/agent-note.txt"}, {"step": 3, "node": "agent", "t": 1.68, "kind": "final", "content": "The file was written successfully. The exact result from the tool is:\n\n**wrote 20 bytes to /tmp/agent-note.txt**"}], "graph": "react"}, {"task": "git: clone from GitLab (blocked)", "prompt": "Use the git tool to clone https://gitlab.com/gitlab-org/gitlab-test.git into /sandbox/work/gl with --depth 1. Report the exact git output and do not retry more than once.", "graph": "react", "model": "/models/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4", "base_url": "https://inference.local/v1", "events": [{"step": 1, "node": "agent", "t": 1.37, "kind": "tool_call", "calls": [{"name": "git", "args": {"command": "clone --depth 1 https://gitlab.com/gitlab-org/gitlab-test.git /sandbox/work/gl"}}]}, {"step": 2, "node": "tools", "t": 1.4, "kind": "tool_result", "tool": "git", "content": "exit 128: Cloning into '/sandbox/work/gl'...\nfatal: unable to access 'https://gitlab.com/gitlab-org/gitlab-test.git/': CONNECT tunnel failed, response 403"}, {"step": 3, "node": "agent", "t": 3.05, "kind": "final", "content": "The git command produced the following output:\n\n```\nfatal: unable to access 'https://gitlab.com/gitlab-org/gitlab-test.git/': CONNECT tunnel failed, response 403\n```"}], "observed": [{"t": 1.9, "kind": "NET:OPEN", "verdict": "DENIED", "text": "/usr/lib/git-core/git-remote-http(3241) -> gitlab.com:443 [policy:- engine:opa] [reason:endpoint gitlab.com:443 not in policy 'brave'; endpoint gitlab.com:443 not in po...]"}], "landlock": "abi:V2 compat:BestEffort ro:7 rw:11", "policy_version": "10"}, {"task": "git: local commit (offline)", "prompt": "Using the git tool, create a repository named demo (git init demo in the default directory). Then use write_file to create /sandbox/work/demo/hello.txt containing 'hello', and with git (cwd /sandbox/work/demo) add it, commit it with message 'first commit', and show git log --oneline.", "graph": "react", "model": "/models/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4", "base_url": "https://inference.local/v1", "events": [{"step": 1, "node": "agent", "t": 2.6, "kind": "tool_call", "calls": [{"name": "git", "args": {"command": "init demo", "cwd": "/sandbox/work"}}]}, {"step": 2, "node": "tools", "t": 2.61, "kind": "tool_result", "tool": "git", "content": "exit 0: Initialized empty Git repository in /sandbox/work/demo/.git/"}, {"step": 3, "node": "agent", "t": 3.18, "kind": "tool_call", "calls": [{"name": "write_file", "args": {"path": "/sandbox/work/demo/hello.txt", "text": "hello"}}]}, {"step": 4, "node": "tools", "t": 3.18, "kind": "tool_result", "tool": "write_file", "content": "wrote 5 bytes to /sandbox/work/demo/hello.txt"}, {"step": 5, "node": "agent", "t": 3.74, "kind": "tool_call", "calls": [{"name": "git", "args": {"command": "add .", "cwd": "/sandbox/work/demo"}}]}, {"step": 6, "node": "tools", "t": 3.75, "kind": "tool_result", "tool": "git", "content": "exit 0: "}, {"step": 7, "node": "agent", "t": 4.34, "kind": "tool_call", "calls": [{"name": "git", "args": {"command": "commit -m 'first commit'", "cwd": "/sandbox/work/demo"}}]}, {"step": 8, "node": "tools", "t": 4.35, "kind": "tool_result", "tool": "git", "content": "exit 0: [main (root-commit) 1625c2b] first commit\n 1 file changed, 1 insertion(+)\n create mode 100644 hello.txt"}, {"step": 9, "node": "agent", "t": 4.96, "kind": "tool_call", "calls": [{"name": "git", "args": {"command": "log --oneline", "cwd": "/sandbox/work/demo"}}]}, {"step": 10, "node": "tools", "t": 4.96, "kind": "tool_result", "tool": "git", "content": "exit 0: 1625c2b first commit"}, {"step": 11, "node": "agent", "t": 6.54, "kind": "final", "content": "The repository **demo** has been created and the file **hello.txt** has been added and committed.\n\n**Git log output**\n\n```\n1625c2b first commit\n```\n\nAll steps performed:\n\n1. `git init demo` \u2013 initialized an empty Git repo in `/sandbox/work/demo/.git/`.\n2. `write_file` \u2013 wrote `'hello'` to `/sandbox/work/demo/hello.txt`.\n3. `git add .` \u2013 staged the new file.\n4. `git commit -m 'first commit'` \u2013 committed the file with the message \u201cfirst commit\u201d.\n5. `git log --oneline` (cwd `/sandbox/work/demo`) \u2013 displayed the single commit."}], "observed": [], "landlock": "abi:V2 compat:BestEffort ro:7 rw:11", "policy_version": 10}, {"task": "research: packages (GitHub API blocked)", "prompt": "Compare the Python packages langgraph and langchain: latest versions, what each is for, and how active their GitHub repositories are (langchain-ai/langgraph and langchain-ai/langchain).", "graph": "research", "model": "/models/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4", "base_url": "https://inference.local/v1", "events": [{"node": "planner", "t": 5.35, "step": 1, "kind": "plan", "urls": ["https://pypi.org/pypi/langgraph/json", "https://pypi.org/pypi/langchain/json", "https://api.github.com/repos/langchain-ai/langgraph", "https://api.github.com/repos/langchain-ai/langchain"]}, {"node": "researcher", "t": 5.36, "step": 2, "kind": "research", "url": "https://api.github.com/repos/langchain-ai/langchain", "ok": false, "content": "URLError: <urlopen error Tunnel connection failed: 403 Forbidden>"}, {"node": "researcher", "t": 5.36, "step": 3, "kind": "research", "url": "https://api.github.com/repos/langchain-ai/langgraph", "ok": false, "content": "URLError: <urlopen error Tunnel connection failed: 403 Forbidden>"}, {"node": "researcher", "t": 5.43, "step": 4, "kind": "research", "url": "https://pypi.org/pypi/langgraph/json", "ok": true, "content": "PyPI langgraph 1.2.16: Building stateful, multi-actor applications with LLMs (requires python >=3.10)"}, {"node": "researcher", "t": 5.45, "step": 5, "kind": "research", "url": "https://pypi.org/pypi/langchain/json", "ok": true, "content": "PyPI langchain 1.4.6: Building applications with LLMs through composability (requires python <4.0.0,>=3.10.0)"}, {"node": "synthesizer", "t": 12.72, "step": 6, "kind": "final", "content": "**Comparison of langgraph and langchain**\n- **Latest versions:** langgraph 1.2.16 [1]; langchain 1.4.6 [2]\n- **Purpose:** langgraph is for \"building stateful, multi-actor applications with LLMs\" [1]; langchain is for \"building applications with LLMs through composability\" [2]\n- **GitHub activity:** API requests for both `langchain-ai/langgraph` [3] and `langchain-ai/langchain` [4] returned 403 Forbidden, so repository activity metrics could not be verified from the provided findings.\n\n**Sources that failed:** [3] and [4] were blocked (403 Forbidden), preventing verification of GitHub repository activity. No GitHub data could be confirmed."}], "observed": [{"t": 5.9, "kind": "NET:OPEN", "verdict": "DENIED", "text": "/usr/bin/python3.13(3353) -> api.github.com:443 [policy:- engine:opa] [reason:endpoint api.github.com:443 not in policy 'brave'; endpoint api.github.com:443 n...]"}, {"t": 5.9, "kind": "NET:OPEN", "verdict": "DENIED", "text": "/usr/bin/python3.13(3353) -> api.github.com:443 [policy:- engine:opa] [reason:endpoint api.github.com:443 not in policy 'brave'; endpoint api.github.com:443 n...]"}, {"t": 5.9, "kind": "NET:OPEN", "verdict": "ALLOWED", "text": "/usr/bin/python3.13(3353) -> pypi.org:443 [policy:pypi engine:opa]"}, {"t": 5.9, "kind": "NET:OPEN", "verdict": "ALLOWED", "text": "/usr/bin/python3.13(3353) -> pypi.org:443 [policy:pypi engine:opa]"}, {"t": 5.9, "kind": "HTTP:GET", "verdict": "ALLOWED", "text": "GET http://pypi.org:443/pypi/langgraph/json [policy:pypi engine:l7]"}, {"t": 5.9, "kind": "HTTP:GET", "verdict": "ALLOWED", "text": "GET http://pypi.org:443/pypi/langchain/json [policy:pypi engine:l7]"}], "landlock": "abi:V2 compat:BestEffort ro:7 rw:11", "policy_version": "10"}]</script>
+<script>
+const $=s=>document.querySelector(s),H=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e},esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let POL=JSON.parse($('#policy').textContent),NET=POL.network_policies,YT=$('#yamltext').textContent.replace(/\n$/,'').split('\n'),SEC={},POLVER='built-in snapshot';
+let TR=JSON.parse($('#traces').textContent);
+const root=document.documentElement;try{const t=localStorage.getItem('th');if(t)root.dataset.theme=t}catch(e){}
+$('#theme').onclick=()=>{const d=root.dataset.theme?root.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;root.dataset.theme=d?'light':'dark';try{localStorage.setItem('th',root.dataset.theme)}catch(e){}};
+// ---- policy data (refreshable from the live server) and engine
+const g2r=g=>new RegExp('^'+g.replace(/[.+?^${}()|[\]\\]/g,'\\$&').replace(/\*\*/g,'\u0000').replace(/\*/g,'[^/]*').replace(/\u0000/g,'.*')+'$');
+function buildSec(){SEC={top:[]};let inNet=false,name=null;YT.forEach(l=>{if(/^network_policies:/.test(l)){inNet=true;return}if(/^[a-z_]+:/.test(l)){inNet=false;name=null;SEC.top.push(l);return}if(inNet){const m=l.match(/^  ([A-Za-z0-9_-]+):\s*$/);if(m){name=m[1];SEC[name]=[l]}else if(name)SEC[name].push(l)}else SEC.top.push(l)})}
+buildSec();
+async function refreshPolicy(){try{const j=await fetch('/api/policy?sandbox=egress-demo').then(r=>r.json());if(!j.policy||!j.yaml)return;POL=j.policy;NET=POL.network_policies||{};YT=j.yaml.replace(/\n$/,'').split('\n');buildSec();POLVER='live policy v'+j.version+' ('+j.hash+')';$('#pvinfo').textContent=POLVER;return j.version}catch(e){}}
+function snip(lines,ctx){return '<pre class="y">'+lines.map(l=>{let c='';if(ctx){const m=l.match(/^\s*- path: (\S+)/),h=l.match(/^\s*- host: (\S+)/);if(m&&ctx.bins)c=ctx.bins.some(b=>g2r(m[1]).test(b))?'hit':'miss';else if(h&&h[1]===ctx.host)c='hit';else if(h&&ctx.dom&&h[1].endsWith(ctx.dom))c='near';else if(ctx.fs&&l.trim().replace(/^- /,'')===ctx.fs)c=ctx.fsOk?'hit':'miss'}return '<span class="'+c+'">'+esc(l)+'</span>'}).join('')+'</pre>'}
+// bins = identity chain: the binary itself, then its parent(s). A rule applies if ANY binary in the chain matches (observed: a child inherits a listed parent).
+function evalNet(bins,host,port,method,path){let near=null;
+ for(const [n,p] of Object.entries(NET))for(const e of (p.endpoints||[])){if(e.host!==host||+e.port!==+port)continue;
+  const hit=bins.find(b=>(p.binaries||[]).some(x=>g2r(x.path).test(b)));
+  if(!hit){near=near||`host is allowed in "${n}" but none of ${bins.join(' / ')} is one of its binaries`;continue}
+  const via=hit===bins[0]?'':` (via parent ${hit})`;
+  if(e.access==='full')return{ok:1,rule:n,why:`"${n}" grants ${hit} full access to ${host}:${port}${via}`};
+  const r=(e.rules||[]).find(r=>r.allow&&r.allow.method.toUpperCase()===method&&g2r(r.allow.path).test(path));
+  if(r)return{ok:1,rule:n,why:`"${n}": ${method} ${r.allow.path} allowed for ${hit}${via}`};near=`binary and host match "${n}" but ${method} ${path} is not an allowed method+path`}
+ return{ok:0,rule:'-',why:near||`${host}:${port} is not in any policy block (default deny)`}}
+function evalFs(path,mode){const fp=POL.filesystem_policy,u=(p,b)=>p===b||p.startsWith(b.replace(/\/$/,'')+'/');
+ const rw=(fp.read_write||[]).filter(b=>u(path,b)).sort((a,b)=>b.length-a.length)[0],ro=(fp.read_only||[]).filter(b=>u(path,b)).sort((a,b)=>b.length-a.length)[0];
+ const best=[rw,ro].filter(Boolean).sort((a,b)=>b.length-a.length)[0];
+ if(!best)return{ok:0,why:'no Landlock rule covers this path',rule:null};
+ return best===rw?{ok:1,why:`read_write rule ${best}`,rule:best}:(mode==='read'?{ok:1,why:`read_only rule ${best} allows reads`,rule:best}:{ok:0,why:`read_only rule ${best} blocks writes`,rule:best})}
+const PY=['/usr/bin/python3.13'],GITH=['/usr/lib/git-core/git-remote-http','/usr/bin/git']; // binaries seen in the audit log
+function urlReq(url,bins){let u;try{u=new URL(url)}catch(e){return{err:'not a valid URL: '+url}}
+ const port=u.port||(u.protocol==='https:'?443:80),host=u.hostname,path=u.pathname;let r=evalNet(bins,host,port,'GET',path);
+ if(host==='inference.local'&&+port===443)r={ok:1,rule:'inference router',why:'inference.local is handled by the OpenShell inference router, not by network_policies matching (audit log: ALLOWED inference.local:443)'};
+ return{kind:'net',r,host,port,path,bins,blocks:Object.keys(NET).filter(n=>(NET[n].endpoints||[]).some(e=>e.host===host)),dom:host.split('.').slice(-2).join('.'),req:`GET ${u.protocol}//${host}${path}`}}
+function tokens(s){return (s.match(/"[^"]*"|'[^']*'|\S+/g)||[]).map(x=>x.replace(/^["']|["']$/g,''))}
+function check(call,ctx){ctx=ctx||{};
+ if(['retrieve','glossary_search','instant_answer'].includes(call.name)){const r=evalFs('/sandbox/corpus/rag_index.json','read');return{kind:'fs',r,path:'/sandbox/corpus',req:call.name+': read the local course corpus',note:'Local retrieval reads files under /sandbox/corpus. No network access is involved.'}}
+ if(call.name==='calculate')return{kind:'note',req:'calculate '+(call.args.expression||''),msg:'Pure computation: no file or network access, so no sandbox rule applies.'}
+ if(call.name==='http_get')return urlReq(call.args.url,PY);
+ if(call.name==='write_file'||call.name==='read_file'){const w=call.name==='write_file',p=call.args.path,r=evalFs(p,w?'write':'read');return{kind:'fs',r,path:p,req:`${w?'write':'read'} ${p}`}}
+ if(call.name==='git'){const tk=tokens(call.args.command||''),sub=(tk[0]==='git'?tk[1]:tk[0])||'',cwd=call.args.cwd||'/sandbox/work',rest=tk.slice(tk[0]==='git'?2:1);
+  const url=rest.find(x=>/^https?:\/\//.test(x)),NETSUB=['clone','push','pull','fetch'];
+  if(sub==='remote'&&rest[0]==='add'){const u=rest.find(x=>/^https?:\/\//.test(x))||rest[2];if(u)ctx.remote=u}
+  if(NETSUB.includes(sub)){let target=url||(sub==='clone'?null:ctx.remote);if(sub==='clone'&&url)ctx.remote=url;
+   if(target&&/^https?:\/\//.test(target)){const c=urlReq(target,GITH);c.req=`git ${sub} ${target}`;c.note='git runs a helper (git-remote-http) for network access; the helper inherits access from its parent /usr/bin/git.';return c}
+   if(target&&target.startsWith('/')){const r=evalFs(target,'write');return{kind:'fs',r,path:target,req:`git ${sub} (local path ${target}): no network`}}
+   return{kind:'note',req:`git ${sub} ${rest.join(' ')}`,msg:'remote host not known from this command; it depends on the remote configured earlier in the run.'}}
+  const r=evalFs(cwd,'write');return{kind:'fs',r,path:cwd,req:`git ${sub} in ${cwd}`,note:'local git operation: only the filesystem rules apply, no network.'}}
+ return{err:'unknown tool '+call.name}}
+function policyHtml(c){if(c.err)return `<div class="verdict warn">${esc(c.err)}</div>`;
+ if(c.kind==='note')return `<div class="chips"><code>${esc(c.req)}</code></div><div class="verdict warn">${esc(c.msg)}</div>`;
+ let h=`<div class="chips"><code>${esc(c.req)}</code>${c.kind==='net'?`<code>binary ${esc(c.bins[0])}${c.bins[1]?' (parent '+esc(c.bins[1])+')':''}</code>`:''}</div>`;
+ h+=`<div class="verdict ${c.r.ok?'ok':'no'}">Policy says ${c.r.ok?'ALLOW':'DENY'}: ${esc(c.r.why)}</div>`;if(c.note)h+=`<div class="blk">${esc(c.note)}</div>`;
+ if(c.kind==='net'){
+  if(!c.blocks.length){const hits=YT.filter(l=>l.includes(c.host)).length;h+=`<div class="blk">YAML search for <code>${esc(c.host)}</code>: <b>${hits} matches</b>. No block lists this host: default deny.</div>`}
+  else c.blocks.forEach(n=>{h+=`<div class="blk">block <b>${esc(n)}</b> (green = matches, red = binary pattern not matching)</div>`+snip(SEC[n]||[],{bins:c.bins,host:c.host})})}
+ else{const sec=SEC.top.slice(0,SEC.top.findIndex(l=>/^landlock:/.test(l)));h+=`<div class="blk">filesystem_policy (longest matching path wins${c.r.rule?`; deciding rule: <code>${esc(c.r.rule)}</code>`:''})</div>`+snip(sec,{fs:c.r.rule,fsOk:c.r.ok})}
+ return h}
+const looksDenied=t=>/ERROR|403|Permission|denied|fatal|exit 1\d\d|FAILED|Forbidden/i.test(t);
+// ---- what did a tool result actually give the model?
+function toolOutcome(res){res=String(res||'');
+ if(/^\(no results for/.test(res))return{c:'n',k:'none',t:'no results: the tool told the model not to answer from memory'};
+ if(/^\[retrieval method|^\[full article|^\[1\] /.test(res)){const n=(res.match(/^\[\d+\]/gm)||[]).length;return{c:'a',k:'ok',t:n?'retrieved '+n+' passage(s)':'read a full article'}}
+ if(/^-?\d+(\.\d+)?$/.test(res.trim()))return{c:'a',k:'ok',t:'computed value'};
+ if(/^ERROR: BLOCKED BY SANDBOX/.test(res))return{c:'d',k:'sandbox',t:'blocked by the SANDBOX policy'};
+ if(/^ERROR: REFUSED BY THE SITE/.test(res))return{c:'n',k:'site',t:'refused by the WEBSITE (the sandbox allowed it)'};
+ if(/^ERROR: NOT FOUND/.test(res))return{c:'n',k:'site',t:'URL does not exist (404); the sandbox allowed it'};
+ if(/^WARNING: PAGE HAS NO READABLE/.test(res))return{c:'n',k:'empty',t:'page has no readable content (JavaScript shell / bot check)'};
+ if(/Tunnel connection failed|CONNECT tunnel failed|not permitted by policy/.test(res))return{c:'d',k:'sandbox',t:'blocked by the SANDBOX policy (legacy message)'};
+ if(/^ERROR: (HTTPError|URLError)/.test(res))return{c:'n',k:'opaque',t:'opaque error text (legacy tool): cannot tell sandbox from website'};
+ if(/^HTTP \d+: <(!DOCTYPE|html)/i.test(res))return{c:'n',k:'markup',t:'raw HTML markup (legacy): first 300 chars carry no usable text'};
+ if(/^ERROR|^fatal|^exit 1\d\d/.test(res))return{c:'d',k:'error',t:'error'};
+ return{c:'a',k:'ok',t:'usable text · '+res.length+' chars'}}
+function groundingHtml(T){const calls=T.events.filter(e=>e.kind==='tool_result');if(!calls.length){const fin=[...T.events].reverse().find(e=>e.kind==='final');return (T.events.some(e=>e.kind==='tool_call')||!fin)?'':'<h2 style="margin-top:10px">Grounding check <span class="tag">heuristic</span></h2><div class="verdict warn">No tool was called. Any factual claim in this answer comes from the model\'s own memory'+(citedNums(fin.content).size?', yet it cites [n] passages that were never retrieved':'')+'. With agent-controlled retrieval the loop may decide to skip the lookup; fixed retrieval (rag_fixed) never does.</div>'}
+ const outs=calls.map(e=>toolOutcome(e.content)),usable=outs.filter(o=>o.k==='ok').length;
+ const final=[...T.events].reverse().find(e=>e.kind==='final'),fin=final?final.content:'';
+ const known=(T.prompt+' '+calls.map(e=>e.content).join(' ')+' '+T.events.filter(e=>e.kind==='tool_call').map(e=>JSON.stringify(e.calls)).join(' ')).toLowerCase().replace(/[^a-z0-9 ]/g,'');
+ const names=[...new Set([...fin.matchAll(/\*\*([^*\n]{3,50})\*\*/g)].map(m=>m[1].trim()))];
+ const miss=names.filter(n=>!known.includes(n.toLowerCase().replace(/[^a-z0-9 ]/g,'')));
+ const tally={};outs.forEach(o=>tally[o.t.split(' (')[0]]=(tally[o.t.split(' (')[0]]||0)+1);
+ let h='<h2 style="margin-top:10px">Grounding check <span class="tag">heuristic</span></h2><div class="chips">'+Object.entries(tally).map(([k,v])=>`<span class="chip ${/usable/.test(k)?'a':/SANDBOX/.test(k)?'d':'n'}">${v} × ${esc(k)}</span>`).join('')+'</div>';
+ if(usable===0)h+='<div class="verdict warn">No tool returned usable content ('+calls.length+' call'+(calls.length>1?'s':'')+'). Anything factual in this answer comes from the model\'s memory, not from the sources it may name. The sandbox is not the reason for the empty results unless a chip says SANDBOX.</div>';
+ else h+=`<div class="verdict ok">${usable} of ${calls.length} tool call(s) returned usable text.</div>`;
+ if(names.length)h+=`<div class="blk">${names.length-miss.length} of ${names.length} bold names in the answer appear in the prompt or tool output.${miss.length?' <b>Not found anywhere in the tool output:</b> '+miss.slice(0,8).map(n=>'<code>'+esc(n)+'</code>').join(' ')+(miss.length>8?' …':''):''}</div>`;
+ return h}
+// ---- frames
+function frames(t){const g=t.graph||'react',f=[],ctx={};
+ if(EVENT_GRAPHS.has(g))return eventFrames(t);
+ if(g==='research'){f.push({k:'prompt',node:'planner',edge:'start-planner',title:'The question enters the graph',txt:t.prompt});let sawR=false;
+  t.events.forEach(ev=>{
+   if(ev.kind==='plan')f.push({k:'plan',node:'planner',edge:null,title:'planner node: the model chooses sources',ev,verdicts:(ev.urls||[]).map(u=>urlReq(u,PY))});
+   else if(ev.kind==='research'){const c=urlReq(ev.url,PY);f.push({k:'research',node:'researcher',edge:'planner-researcher',title:'researcher node: fetch '+(()=>{try{return new URL(ev.url).hostname}catch(e){return ev.url}})(),ev,verdicts:[c]});sawR=true}
+   else f.push({k:'final',node:'synth',edge:sawR?'researcher-synth':'planner-synth',title:'synthesizer node: the report',ev,verdicts:[]})});
+  f.push({k:'end',node:'end',edge:'synth-end',title:'END'});return f}
+ f.push({k:'prompt',node:'agent',edge:'start-agent',title:'Prompt enters the graph',txt:t.prompt});let prev='prompt',q=[];
+ t.events.forEach(ev=>{
+  if(ev.kind==='tool_call'){q=ev.calls.map(c=>check(c,ctx));f.push({k:'llm',node:'agent',edge:prev==='tool_result'?'tools-agent':null,title:'agent node: the model decides to call a tool',ev,calls:ev.calls,t:ev.t,verdicts:q.slice()})}
+  else if(ev.kind==='tool_result'){const c=q.shift();f.push({k:'tool',node:'tools',edge:'agent-tools',title:'tools node: the tool runs inside the sandbox',ev,t:ev.t,verdicts:c?[c]:[]})}
+  else f.push({k:'final',node:'agent',edge:prev==='tool_result'?'tools-agent':null,title:'agent node: final answer',ev,t:ev.t,verdicts:[]});prev=ev.kind});
+ f.push({k:'end',node:'end',edge:'agent-end',title:'END'});return f}
+// ---- graph specs and a small generic layout/drawing routine
+const S0=['start','START','',1],E0=['end','END','',1];
+const GRAPHS={
+ react:{nodes:[S0,['agent','agent','LLM via inference.local'],['tools','tools','http_get search_web write_file read_file git'],E0],edges:[['start','agent'],['agent','tools','tool_calls?'],['tools','agent','tool result',{back:1}],['agent','end','no tool calls',{arc:1}]]},
+ agentic_rag:{nodes:[S0,['agent','agent','LLM decides whether to retrieve'],['tools','tools','retrieve glossary_search instant_answer calculate'],E0],edges:[['start','agent'],['agent','tools','tool_calls?'],['tools','agent','tool result',{back:1}],['agent','end','no tool calls',{arc:1}]]},
+ research:{nodes:[S0,['planner','planner','LLM: choose sources'],['researcher','researcher','fetch one URL, parallel'],['synth','synthesizer','LLM: cited report'],E0],edges:[['start','planner'],['planner','researcher','Send ×N'],['researcher','synth'],['planner','synth','no URLs',{arc:1,dash:1}],['synth','end']]},
+ rag_none:{nodes:[S0,['generate','generate','LLM answers from memory'],E0],edges:[['start','generate'],['generate','end']]},
+ rag_fixed:{nodes:[S0,['retrieve','retrieve','top-K from the corpus'],['generate','generate','LLM: answer from context only'],E0],edges:[['start','retrieve'],['retrieve','generate','context'],['generate','end']]},
+ rewoo:{nodes:[S0,['planner','planner','ONE LLM call: queries'],['search','search ×N','glossary search, no LLM'],['synthesize','synthesize','LLM: cited answer'],E0],edges:[['start','planner'],['planner','search','Send ×N'],['search','synthesize'],['synthesize','end']]},
+ router:{nodes:[S0,['classify','classify','LLM: closed-enum triage'],['network','network','specialist'],['hardware','hardware','specialist'],['software','software','specialist'],['account','account','specialist'],E0],edges:[['start','classify'],['classify','network','category'],['classify','hardware'],['classify','software'],['classify','account'],['network','end'],['hardware','end'],['software','end'],['account','end']]},
+ graphrag:{nodes:[S0,['partition','partition','3 communities'],['summarize','summarize','LLM map, parallel'],['reduce','reduce','LLM: answer from summaries'],E0],edges:[['start','partition'],['partition','summarize','Send ×N'],['summarize','reduce'],['reduce','end']]}};
+const EVENT_GRAPHS=new Set(['rag_none','rag_fixed','rewoo','router','graphrag']);
+function wrapTxt(s,n){const w=String(s).split(' '),L=[''];w.forEach(x=>{if((L[L.length-1]+' '+x).trim().length>n&&L[L.length-1])L.push(x);else L[L.length-1]=(L[L.length-1]+' '+x).trim()});return L.slice(0,3)}
+function drawGraph(g){const spec=GRAPHS[g]||GRAPHS.react,nodes=spec.nodes.map(n=>({id:n[0],label:n[1],sub:n[2]||'',term:!!n[3]})),fwd=spec.edges.filter(e=>!(e[3]&&e[3].back));
+ const depth={start:0};for(let i=0;i<30;i++)fwd.forEach(([a,b])=>{if(depth[a]!==undefined&&(depth[b]===undefined||depth[b]<depth[a]+1))depth[b]=depth[a]+1});
+ depth.end=Math.max(...Object.entries(depth).filter(([k])=>k!=='end').map(([,v])=>v))+1;
+ const cols={};nodes.forEach(n=>{const k=depth[n.id]||0;(cols[k]=cols[k]||[]).push(n)});
+ const W=122,HH=58,GX=180,GY=72,ncol=Math.max(...Object.keys(cols).map(Number))+1,rows=Math.max(...Object.values(cols).map(c=>c.length)),width=ncol*GX+30,height=Math.max(210,rows*GY+80),pos={};
+ Object.entries(cols).forEach(([k,list])=>list.forEach((n,i)=>{const w=n.term?72:W,h=n.term?40:HH;pos[n.id]={x:16+k*GX+(W-w)/2,y:height/2-h/2+(i-(list.length-1)/2)*GY,w,h}}));
+ let s=`<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--sub)"/></marker></defs>`;
+ spec.edges.forEach(([a,b,lab,o])=>{o=o||{};const A=pos[a],B=pos[b];let path,lx,ly;
+  if(o.back){const x1=A.x+A.w/2,y1=A.y+A.h,x2=B.x+B.w/2,y2=B.y+B.h;path=`M${x1} ${y1}C${x1} ${y1+62},${x2} ${y2+62},${x2} ${y2+4}`;lx=(x1+x2)/2;ly=y1+54}
+  else if(o.arc){const x1=A.x+A.w/2,y1=A.y,x2=B.x+B.w/2,y2=B.y;path=`M${x1} ${y1}C${x1} ${y1-56},${x2} ${y2-56},${x2} ${y2-3}`;lx=(x1+x2)/2;ly=Math.min(y1,y2)-46}
+  else{const x1=A.x+A.w,y1=A.y+A.h/2,x2=B.x,y2=B.y+B.h/2;path=`M${x1} ${y1}C${x1+34} ${y1},${x2-34} ${y2},${x2-2} ${y2}`;lx=(x1+x2)/2;ly=(y1+y2)/2-6}
+  s+=`<path id="ge-${a}-${b}" class="ed" d="${path}" marker-end="url(#ar)"${o.dash?' stroke-dasharray="5 4"':''}/>`+(lab?`<text class="s" x="${lx}" y="${ly}" text-anchor="middle">${esc(lab)}</text>`:'')});
+ nodes.forEach(n=>{const P=pos[n.id],cx=P.x+P.w/2;let inner=`<rect x="${P.x}" y="${P.y}" width="${P.w}" height="${P.h}" rx="${n.term?20:10}"/>`;
+  if(n.term)inner+=`<text x="${cx}" y="${P.y+P.h/2+4}" text-anchor="middle">${esc(n.label)}</text>`;
+  else{const L=wrapTxt(n.sub,20);inner+=`<text x="${cx}" y="${P.y+19}" text-anchor="middle" style="font-weight:600">${esc(n.label)}</text>`+L.map((l,i)=>`<text class="s" x="${cx}" y="${P.y+32+i*11}" text-anchor="middle" style="font-size:10px">${esc(l)}</text>`).join('')}
+  s+=`<g class="nd" id="gn-${n.id}">${inner}</g>`});
+ const svg=$('#gsvg');svg.setAttribute('viewBox',`0 0 ${width} ${height}`);svg.innerHTML=s}
+// ---- generic frames for graphs whose nodes emit their own events (course graphs)
+function evTitle(ev){const q=x=>String(x||'').slice(0,50);
+ return {retrieve:`retrieve node: top-${ev.k} from the ${ev.corpus} corpus`,search:`search node: "${q(ev.query)}"`,plan_queries:`planner node: ${(ev.queries||[]).length} search queries from ONE model call`,classify:`classify node: triage → ${ev.category}`,communities:`partition node: ${(ev.communities||[]).length} communities`,map:`summarize node: ${ev.community}`,final:`${ev.node} node: the answer`}[ev.kind]||`${ev.node} node`}
+function eventFrames(t){const spec=GRAPHS[t.graph],first=spec.edges.find(e=>e[0]==='start')[1];
+ const f=[{k:'prompt',node:first,edge:'start-'+first,title:'The question enters the graph',txt:t.prompt}];let prev=first;
+ t.events.forEach(ev=>{const has=spec.edges.some(e=>e[0]===prev&&e[1]===ev.node);f.push({k:ev.kind,node:ev.node,edge:has?prev+'-'+ev.node:null,title:evTitle(ev),ev,t:ev.t});prev=ev.node});
+ f.push({k:'end',node:'end',edge:spec.edges.some(e=>e[0]===prev&&e[1]==='end')?prev+'-end':null,title:'END'});return f}
+function citedNums(txt){const s=new Set();[...String(txt).matchAll(/[\[【](\d{1,2})[\]】]/g)].forEach(m=>s.add(+m[1]));return s}
+function hitsHtml(hits){if(!hits||!hits.length)return '<div class="verdict warn">No passages matched. The generator receives an empty context bundle.</div>';const mx=Math.max(...hits.map(h=>+h.score||0),0.0001);
+ return hits.map(h=>`<div class="ev" style="flex-direction:column;gap:3px"><div class="row"><b>[${h.n}]</b><span class="tag">${h.score!=null?'score '+h.score:'no score'}</span><span class="sub" style="word-break:break-all">${esc(h.source)}</span></div><div style="height:6px;border-radius:3px;background:var(--line);overflow:hidden"><i style="display:block;height:100%;width:${Math.max(4,(+h.score||0)/mx*100)}%;background:var(--green)"></i></div><div style="font-family:system-ui;word-break:normal">${esc(h.text)}</div></div>`).join('')}
+function localChip(){const r=evalFs('/sandbox/corpus/rag_index.json','read'),n=T&&T.observed?T.observed.length:null;return `<div class="chips"><span class="chip ${r.ok?'a':'d'}">sandbox: read /sandbox/corpus → ${r.ok?'allowed':'denied'} (${esc(r.why)})</span><span class="chip ${n===0?'a':'n'}">${n===null?'network events: not recorded (offline replay)':'network events: '+n}</span></div>`}
+function finalEventHtml(fr,T){const ev=fr.ev,ctx=ev.context||[],cited=citedNums(ev.content),refusal=/can['’]t find that in the provided context|could not find|couldn['’]t find/i.test(ev.content),g=T.graph;
+ let h=`<pre>${esc(ev.content)}</pre>`;
+ if(g==='rag_none')return h+'<div class="verdict warn">Ladder rung 1, generation alone: no retrieval, no sources, no citations. Every claim comes from the model\'s memory.</div>';
+ if(g==='router')return h+'<div class="verdict ok">The router only chose WHICH role prompt answers (a specialist built by a factory). No retrieval: the answer is not grounded in a corpus, by design.</div>';
+ h+='<h2 style="margin-top:10px">Citation check <span class="tag">heuristic</span></h2>';
+ const bad=[...cited].filter(n=>n<1||n>ctx.length);
+ if(refusal)h+='<div class="verdict ok">The answer says the context lacks it. That is the correct grounded behaviour when the corpus cannot answer the question.</div>';
+ else if(!cited.size)h+='<div class="verdict warn">The answer has no [n] citations, so you cannot tell which passage supports which claim.</div>';
+ else if(bad.length)h+=`<div class="verdict no">Invented citation: cites ${bad.map(n=>'['+n+']').join(' ')} but only ${ctx.length} passages were provided.</div>`;
+ else h+=`<div class="verdict ok">Cites ${cited.size} of ${ctx.length} provided passages; every citation points at a real passage.</div>`;
+ h+='<div class="blk">Context bundle the generator saw (cited = green):</div>'+ctx.map(c=>`<div class="ev ${cited.has(c.n)?'a':''}" style="${cited.has(c.n)?'':'opacity:.65'};flex-direction:column;gap:2px"><div class="row"><b>[${c.n}]</b><span class="tag">${cited.has(c.n)?'cited':'not cited'}</span><span class="sub" style="word-break:break-all">${esc(c.source)}${c.score!=null?' · score '+c.score:''}</span></div><div style="font-family:system-ui;word-break:normal">${esc(c.text)}</div></div>`).join('')
+ +(g==='graphrag'?'<div class="blk">GraphRAG answers from one summary per community, so a global question sees every family. Basic top-K only sees the K best chunks.</div>':'');
+ return h+localChip()}
+let cur=0,FR=[],T=null;
+function showEmpty(){T=null;FR=[];cur=0;$('#prompt').innerHTML='<span class="sub">No replays. Run a prompt in the sandbox or paste a trace below. (Reloading the page restores the built-in replays.)</span>';$('#gtag').textContent='';$('#steps').innerHTML='';$('#detail').innerHTML='';$('#gsvg').innerHTML='';$('#obs').hidden=true}
+function setTrace(i){if(!TR[i]){showEmpty();return}T=TR[i];FR=frames(T);cur=0;$('#prompt').innerHTML='<b>Task:</b> '+esc(T.prompt);const g=T.graph||'react';drawGraph(g);$('#gtag').textContent='graph: '+g+(T.corpus&&/rag|rewoo|graphrag/.test(g)?' · corpus '+T.corpus+(T.k?' k='+T.k:'')+(T.parent?' parent-doc':''):'')+(T.grounded===false?' · grounding OFF':'')+(T.legacy?' · legacy tool output':'')+(T.policy_version?' · run under policy v'+T.policy_version:'');
+ buildSteps();renderObs();render()}
+function stepBadge(fr){if(fr.k==='tool'||fr.k==='research'){const c=fr.verdicts[0];if(c&&c.r){const pol=c.r.ok?'<span class="tag" style="color:var(--green)">sandbox: allowed</span>':'<span class="tag" style="color:var(--red)">sandbox: denied</span>';
+ let res='';if(fr.k==='tool'){const o=toolOutcome(fr.ev.content),short={sandbox:'blocked by sandbox',site:'website said no',empty:'empty page',opaque:'opaque error',markup:'raw HTML only',error:'error',ok:'got usable text'}[o.k];res=` <span class="chip ${o.c}" style="font-size:.7rem;padding:0 7px">${short}</span>`}
+ else{const m={ok:'got usable text',sandbox_blocked:'blocked by sandbox',site_refused:'website said no',not_found:'404 not found',empty_shell:'empty page',error:'network error'}[fr.ev.outcome];if(m)res=` <span class="chip ${fr.ev.ok?'a':fr.ev.outcome==='sandbox_blocked'?'d':'n'}" style="font-size:.7rem;padding:0 7px">${m}</span>`}
+ return pol+res}}return ''}
+function buildSteps(){const s=$('#steps');s.innerHTML='';FR.forEach((fr,i)=>{const d=H('div','st',`<b>${i+1}</b><div><div>${esc(fr.title)} ${stepBadge(fr)}</div></div>`);d.onclick=()=>{cur=i;render()};s.append(d)})}
+function obsFor(hostList){const ob=(T&&T.observed)||[];if(!hostList.length)return '';return '<div class="blk">Sandbox audit log for this step:</div>'+hostList.map(h=>{const m=ob.filter(e=>e.text.includes(h));if(!m.length)return `<span class="chip n">${esc(h)}: no connection recorded${T.observed?'':' (offline replay)'}</span>`;return m.slice(0,3).map(e=>`<span class="chip ${e.verdict==='ALLOWED'?'a':'d'}" title="${esc(e.text)}">${e.verdict} ${esc(e.text.slice(0,70))}</span>`).join('')}).join('')}
+function hostsOfCall(c){const h=[];if(c&&c.kind==='net'&&c.host)h.push(c.host);return h}
+function render(){if(!FR.length)return;const fr=FR[cur],g=(T.graph||'react');
+ document.querySelectorAll('.st').forEach((e,i)=>e.classList.toggle('cur',i===cur));
+ document.querySelectorAll('.nd').forEach(e=>e.classList.remove('on','deny','warn'));
+ const nodeEl=$('#gn-'+fr.node);if(nodeEl)nodeEl.classList.add('on');
+ document.querySelectorAll('.ed').forEach(e=>e.classList.toggle('on',e.id==='ge-'+fr.edge));
+ $('#dtitle').textContent=`Step ${cur+1} of ${FR.length}: ${fr.title}`;const d=$('#detail');d.innerHTML='';
+ if(fr.k==='prompt')d.innerHTML=`<pre>${esc(fr.txt)}</pre><div class="sub">${g==='research'?'State = {question, urls, findings, report}. START hands the question to the <b>planner</b> node.':'State = a list of messages. START hands it to the <b>agent</b> node.'}</div>`;
+ if(fr.k==='llm'){d.innerHTML=`<div class="chips"><code>POST https://inference.local/v1/chat/completions</code><span class="tag">${fr.t}s into run</span></div><div class="sub">The model call is routed by OpenShell to your vLLM endpoint (audit log: <code>ALLOWED inference.local:443</code>). The model replies with a tool call, so the conditional edge goes to <b>tools</b>.</div>`+fr.calls.map(c=>`<pre>${esc(c.name)}(${esc(JSON.stringify(c.args))})</pre>`).join('')+'<h2 style="margin-top:10px">Will the sandbox allow it? (policy prediction)</h2>'+fr.verdicts.map(policyHtml).join('')}
+ if(fr.k==='tool'){const c=fr.verdicts[0],res=fr.ev.content,oc=toolOutcome(res),sbx=oc.k==='sandbox',denied=(c&&c.kind==='net')?sbx:(oc.k==='ok'||oc.k==='none'?false:looksDenied(res));let match='';
+  if(c&&c.r){const ok=!!c.r.ok===!denied;match=`<div class="verdict ${ok?'ok':'warn'}">${ok?'Actual result matches the policy prediction':'Actual result differs from the prediction'}: policy said ${c.r.ok?'ALLOW':'DENY'}, tool ${denied?'was blocked/returned an error':(oc.k==='ok'?'succeeded':'got through the sandbox')}.</div>`+(c&&c.kind==='net'&&c.r.ok&&oc.k!=='ok'?`<div class="blk">The sandbox allowed this request. The empty or failed result came from the <b>website or the tool</b>, not from OpenShell: ${esc(oc.t)}.</div>`:'')+(ok?'':'<div class="blk">A difference is informative: the YAML is one layer. Unix permissions, missing credentials (for example git push), a missing file, the remote server, or a policy edited since this run can also decide the outcome.</div>');if(nodeEl&&!c.r.ok)nodeEl.classList.add('deny')}
+  d.innerHTML=`<div class="sub">Tool: <code>${esc(fr.ev.tool)}</code> <span class="chip ${oc.c}">${esc(oc.t)}</span></div><pre>${esc(res)}</pre>${match}`+obsFor(hostsOfCall(c))+(c?'<h2 style="margin-top:10px">Policy evidence</h2>'+policyHtml(c):'')+'<div class="sub" style="margin-top:6px">The result goes back into the state and the edge returns to <b>agent</b>. The error is just a string to the model; the block happened in the proxy / kernel.</div>'}
+ if(fr.k==='plan'){d.innerHTML=`<div class="sub">The planner asked the model for sources. The fan-out edge sends one <b>researcher</b> task per URL, in parallel.</div>`+(fr.ev.urls||[]).map((u,i)=>{const c=fr.verdicts[i];return `<div class="chips"><code>${esc(u)}</code><span class="chip ${c.r&&c.r.ok?'a':'d'}">${c.r&&c.r.ok?'policy: ALLOW':'policy: DENY'}</span></div>`}).join('')+'<div class="sub">Predictions use the policy loaded in this page (see the note at the top). A DENY here means that researcher will come back empty.</div>'}
+ if(fr.k==='research'){const c=fr.verdicts[0],ok=!!fr.ev.ok;let match='';if(c&&c.r){const blocked=fr.ev.outcome?fr.ev.outcome==='sandbox_blocked':!ok,agree=!!c.r.ok===!blocked;match=`<div class="verdict ${agree?'ok':'warn'}">${agree?'Actual result matches the policy prediction':'Actual result differs from the prediction'}: policy said ${c.r.ok?'ALLOW':'DENY'}, ${blocked?'the sandbox blocked it':'the sandbox let it through'}${c.r.ok&&!ok?' (the failure came from the website, not OpenShell)':''}.</div>`;if(nodeEl&&blocked)nodeEl.classList.add('deny')}
+  const OUTL={ok:'readable text',sandbox_blocked:'blocked by the SANDBOX policy',site_refused:'refused by the WEBSITE',not_found:'URL does not exist (404)',empty_shell:'no readable content',error:'network error'};d.innerHTML=`<div class="chips"><code>${esc(fr.ev.url)}</code><span class="chip ${ok?'a':fr.ev.outcome==='sandbox_blocked'?'d':'n'}">${esc(OUTL[fr.ev.outcome]||(ok?'fetched':'failed'))}</span></div><pre>${esc(fr.ev.content)}</pre>${match}`+obsFor(hostsOfCall(c))+(c?'<h2 style="margin-top:10px">Policy evidence</h2>'+policyHtml(c):'')}
+ if(fr.k==='final'&&EVENT_GRAPHS.has(g)){d.innerHTML=finalEventHtml(fr,T)}
+ else if(fr.k==='final'){const failed=T.events.filter(e=>e.kind==='research'&&!e.ok).length;d.innerHTML=`<pre>${esc(fr.ev.content)}</pre><div class="sub">${g==='research'?'The synthesizer sees every finding, including the failures.':'No tool calls, so the conditional edge goes to END.'}</div>`+(g==='research'&&failed?`<div class="verdict warn">${failed} source(s) were blocked or unreachable. The report should say so: check it does not claim facts from sources that failed.</div>`:'')+(T.task==='fetch-allowed'?'<div class="verdict warn">Check the answer: the tool output was cut and had no version number, yet the model may state one. The sandbox cannot catch that.</div>':'')+((g==='react'||g==='agentic_rag')?groundingHtml(T):'')}
+ if(fr.k==='prompt'&&EVENT_GRAPHS.has(g))d.innerHTML=`<pre>${esc(fr.txt)}</pre><div class="sub">${{rag_none:'Ladder rung 1: the model answers alone.',rag_fixed:'Ladder rung 2: retrieval runs before EVERY answer.',rewoo:'ReWOO: one planning call, then searches that need no model, then one synthesis.',router:'Router: a closed-enum classification picks one specialist.',graphrag:'GraphRAG: summarize each community (map), then answer from the summaries (reduce).'}[g]}</div>`;
+ if(fr.k==='retrieve')d.innerHTML=`<div class="chips"><code>query: ${esc(fr.ev.query)}</code><span class="chip n">${esc(fr.ev.method)}</span><span class="tag">corpus ${esc(fr.ev.corpus)} · k=${fr.ev.k}${fr.ev.parent?' · parent-document':''}</span></div>`+hitsHtml(fr.ev.hits)+'<div class="sub" style="margin-top:6px">No model is involved here. These numbered passages are the ONLY context the generator will see.</div>'+localChip();
+ if(fr.k==='search')d.innerHTML=`<div class="chips"><code>query: ${esc(fr.ev.query)}</code><span class="chip n">${esc(fr.ev.method)}</span></div>`+hitsHtml(fr.ev.hits)+'<div class="sub" style="margin-top:6px">A tool call with no model call: deterministic, runs in parallel with its siblings.</div>'+localChip();
+ if(fr.k==='plan_queries')d.innerHTML=`<div class="sub">Topic: <b>${esc(fr.ev.topic||'')}</b>. ONE model call produced the whole plan; no model is called again until the synthesis.</div>`+(fr.ev.queries||[]).map((q,i)=>`<div class="chips"><b>${i+1}.</b> <code>${esc(q)}</code></div>`).join('');
+ if(fr.k==='classify')d.innerHTML=`<div class="chips"><span class="chip a">category: ${esc(fr.ev.category)}</span><span class="chip n">priority: ${esc(fr.ev.priority)}</span><span class="chip ${fr.ev.valid?'a':'d'}">${fr.ev.valid?'valid enum':'invalid: fell back to software'}</span></div><div class="sub">Summary: ${esc(fr.ev.summary)}</div><pre>${esc(fr.ev.raw||'')}</pre><div class="sub">The conditional edge reads <code>category</code> and runs exactly one specialist node (${esc(fr.ev.category)}). Closed enum = the model cannot route anywhere unexpected.</div>`;
+ if(fr.k==='communities')d.innerHTML='<div class="sub">The corpus is pre-partitioned into families. Top-K never sees these labels; GraphRAG retrieves by them.</div>'+fr.ev.communities.map(c=>`<div class="ev" style="flex-direction:column;gap:2px"><b>${esc(c.name)}</b>${c.docs.map(x=>'<div style="font-family:system-ui;word-break:normal">- '+esc(x)+'</div>').join('')}</div>`).join('');
+ if(fr.k==='map')d.innerHTML=`<div class="chips"><span class="chip a">${esc(fr.ev.community)}</span></div>`+fr.ev.docs.map(x=>'<div class="sub">- '+esc(x)+'</div>').join('')+`<h2 style="margin-top:8px">Community summary (map output)</h2><pre>${esc(fr.ev.summary)}</pre>`;
+ if(fr.k==='end')d.innerHTML='<div class="sub">Run finished. The sandbox recorded each outbound connection; see <code>openshell logs egress-demo</code>.</div>'}
+function renderObs(){const ob=T&&T.observed;$('#obs').hidden=!ob;if(!ob)return;$('#obscnt').textContent=ob.length+' events';$('#obsll').textContent=(T.landlock?'Kernel filesystem sandbox applied: Landlock '+T.landlock+'. ':'')+'Filesystem denials are enforced by the kernel and are not logged as events. Model calls are not listed.';
+ $('#obsbody').innerHTML=ob.length?ob.map(e=>`<div class="ev ${e.verdict==='ALLOWED'?'a':'d'}"><b>${e.verdict}</b><span>+${e.t}s ${esc(e.kind)} ${esc(e.text)}</span></div>`).join(''):'<div class="sub">No network events.</div>'}
+$('#next').onclick=()=>{cur=Math.min(cur+1,FR.length-1);render()};$('#prev').onclick=()=>{cur=Math.max(cur-1,0);render()};$('#reset').onclick=()=>{cur=0;render()};
+let pt=null;$('#play').onclick=()=>{if(pt){clearInterval(pt);pt=null;$('#play').textContent='Play';return}$('#play').textContent='Pause';pt=setInterval(()=>{if(cur>=FR.length-1){clearInterval(pt);pt=null;$('#play').textContent='Play';return}cur++;render()},1500)};
+function fillSel(){const s=$('#sel');s.innerHTML='';TR.forEach((t,i)=>{const o=H('option','',esc((t.graph&&t.graph!=='react'?'['+t.graph+'] ':'')+t.task));o.value=i;s.append(o)});s.onchange=()=>setTrace(+s.value)}
+fillSel();setTrace(0);
+// ---- delete replays (two clicks: the first arms, the second deletes; no browser dialogs)
+function stopPlay(){if(pt){clearInterval(pt);pt=null;$('#play').textContent='Play'}}
+function armDelete(btn,label,fn){let armed=false,tm=null;btn.onclick=()=>{if(!armed){armed=true;btn.textContent='Click again to confirm';tm=setTimeout(()=>{armed=false;btn.textContent=label},3500);return}clearTimeout(tm);armed=false;btn.textContent=label;fn()}}
+armDelete($('#rdel'),'Delete replay',()=>{if(!TR.length)return;stopPlay();const i=+$('#sel').value;TR.splice(i,1);fillSel();if(TR.length){$('#sel').value=Math.min(i,TR.length-1);setTrace(+$('#sel').value)}else showEmpty()});
+armDelete($('#rdelall'),'Delete all',()=>{stopPlay();TR=[];fillSel();showEmpty()});
+// ---- live runner
+let SAMPLES=[],LAST=null;
+const finalOf=t=>{const f=[...t.events].reverse().find(e=>e.kind==='final');return f?f.content:''};
+async function doRun(prompt,graph,grounded,legacy,opts){grounded=grounded!==false;legacy=!!legacy;opts=opts||{corpus:'course',k:3,parent:false};const r=await fetch('/api/run',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({prompt,graph,grounded,legacy,corpus:opts.corpus,k:opts.k,parent:opts.parent})});const j=await r.json();if(!j.trace)throw new Error((j.error||'failed')+(j.detail?': '+j.detail:''));
+ const ver=await refreshPolicy();const t=j.trace;t.task='live: '+prompt.slice(0,28)+(prompt.length>28?'...':'');t.observed=j.events||[];t.landlock=j.landlock;t.policy_version=ver;t.graph=t.graph||graph;t.grounded=grounded;t.legacy=legacy;t.opts=opts;TR.push(t);fillSel();$('#sel').value=TR.length-1;setTrace(TR.length-1);
+ LAST={prompt,graph,grounded,legacy,opts,answer:finalOf(t),events:t.observed,version:ver};if(PT)PT.renderDenied();return j}
+fetch('/api/health').then(r=>r.json()).then(async j=>{if(!j.ok)throw 0;$('#livestat').innerHTML='Live runner connected to sandbox <code>'+esc(j.sandbox)+'</code>. Each run executes the agent inside the sandbox, so every tool call is judged by the real policy.';$('#lrun').disabled=false;await refreshPolicy();if(FR.length){buildSteps();render()}return fetch('/api/samples')}).then(r=>r.json()).then(x=>{SAMPLES=x;const s=$('#samp'),gs={};s.innerHTML='<option value="">Custom (edit the box)</option>';x.forEach((e,i)=>{let g=gs[e.group];if(!g){g=gs[e.group]=H('optgroup');g.label=e.group;s.append(g)}const o=H('option','',esc(e.label));o.value=i;g.append(o)});s.onchange=()=>{const e=SAMPLES[+s.value];if(e){$('#lp').value=e.prompt;$('#graphsel').value=e.graph||'react';$('#grdsel').value=e.grounded===false?'0':'1';$('#corsel').value=e.corpus||'course';$('#ksel').value=e.k||3;$('#parsel').checked=!!e.parent;$('#toolsel').value=e.legacy?'1':'0';$('#lexp').innerHTML='<b>Expect:</b> '+esc(e.expect)}else $('#lexp').textContent=''}}).catch(()=>{$('#livestat').innerHTML='Live runner not available (page opened as a file or the server is not running). Start it on the host: <code>python3 live_server.py</code>, then open <code>http://127.0.0.1:8890/langgraph_viewer.html</code>. Replays below still work.'});
+$('#lrun').onclick=async()=>{const prompt=$('#lp').value.trim();if(!prompt)return;const b=$('#lrun');b.disabled=true;$('#lmsg').textContent='Running in the sandbox (usually 5-60 s)...';
+ try{const j=await doRun(prompt,$('#graphsel').value,$('#grdsel').value==='1',$('#toolsel').value==='1',{});$('#lmsg').textContent='Done: '+j.trace.events.length+' graph steps. Press Next step or Play.';$('#play').click()}catch(e){$('#lmsg').textContent='Error: '+e.message}finally{b.disabled=false}};
+// ---- what-if
+$('#wt').onchange=()=>{const v=$('#wt').value;$('#wv').value=v==='http_get'?'https://api.github.com/':v==='read_file'?'/etc/hostname':v==='git'?'clone https://gitlab.com/gitlab-org/gitlab-test.git':'/tmp/x.txt'};
+$('#wgo').onclick=()=>{const t=$('#wt').value,v=$('#wv').value.trim();$('#wout').innerHTML=policyHtml(check(t==='http_get'?{name:t,args:{url:v}}:t==='git'?{name:t,args:{command:v,cwd:'/sandbox/work'}}:{name:t,args:{path:v}},{}))};$('#wgo').click();
+// ---- offline paste
+$('#tload').onclick=()=>{try{const x=JSON.parse($('#tin').value);if(!Array.isArray(x)||!x.every(t=>t.events&&t.prompt))throw new Error('expected an array of traces with prompt and events');TR=x;fillSel();setTrace(0);$('#tmsg').textContent='Loaded '+x.length+' trace(s)'}catch(e){$('#tmsg').textContent='Error: '+e.message}};
+// ---- tabs + shared policy tools
+const TABS=[['run','Run & replay'],['pol','Policy editor'],['diff','Policy diff']];
+TABS.forEach(([id,l])=>{const b=H('button','tabbtn',l);b.dataset.id=id;b.onclick=()=>showTab(id);$('#tabs').append(b)});
+let PT=null;
+function showTab(id){TABS.forEach(([t])=>$('#t-'+t).hidden=t!==id);document.querySelectorAll('.tabbtn').forEach(b=>b.setAttribute('aria-selected',b.dataset.id===id));if(PT&&id==='pol')PT.openEditor();if(PT&&id==='diff')PT.openDiff();if(id==='run'){refreshPolicy().then(()=>{if(FR.length){buildSteps();render()}})}}
+let SBX='egress-demo';
+function mountPT(){if(window.PolicyTools)PT=PolicyTools.mount({polEl:$('#polmount'),diffEl:$('#diffmount'),sandboxes:[SBX],getLast:()=>LAST,rerun:async(prompt,before)=>{await doRun(prompt,(before&&before.graph)||'react',before?before.grounded:true,before?before.legacy:false,before&&before.opts)}});
+else{$('#polmount').textContent='policy_tools.js could not be loaded (open this page through live_server.py).';$('#diffmount').textContent=$('#polmount').textContent}}
+fetch('/api/health').then(r=>r.json()).then(j=>{SBX=j.sandbox||SBX}).catch(()=>{}).then(mountPT);
+showTab('run');
+</script>
+</body>
+</html>

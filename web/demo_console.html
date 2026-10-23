@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenShell Demo Console</title>
+<style>
+:root{--bg:#f6f7f8;--panel:#fff;--ink:#16191d;--sub:#5b636b;--line:#d5d9dd;--green:#5e9400;--blue:#1f6feb;--amber:#a86a00;--red:#d1344a;--teal:#0f8f84;--okbg:#e6f4d0;--nobg:#fde3e6;--warnbg:#fff1cf;--code:#eef0f2}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0d0d0d;--panel:#17191c;--ink:#e8eaed;--sub:#9aa0a6;--line:#3a3f45;--green:#9bd14a;--blue:#5aa8ff;--amber:#e3b341;--red:#ff6b6b;--teal:#3fd0c0;--okbg:#22300f;--nobg:#3a1a1f;--warnbg:#3a2e10;--code:#101214;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#0d0d0d;--panel:#17191c;--ink:#e8eaed;--sub:#9aa0a6;--line:#3a3f45;--green:#9bd14a;--blue:#5aa8ff;--amber:#e3b341;--red:#ff6b6b;--teal:#3fd0c0;--okbg:#22300f;--nobg:#3a1a1f;--warnbg:#3a2e10;--code:#101214;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,sans-serif;padding-inline:16px}
+.wrap{max-width:1000px;margin:0 auto;padding-block:20px 60px}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;border-bottom:3px solid var(--green);padding-bottom:10px}
+h1{margin:0;font-size:1.4rem}h2{font-size:1.1rem;margin:0 0 4px}.lead{color:var(--sub);margin:0 0 12px}.sub{color:var(--sub);font-size:.85rem}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}
+button,.tab{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:5px 12px}
+.tab[aria-selected=true]{background:var(--green);color:#111;border-color:var(--green);font-weight:600}
+button.primary{background:var(--green);color:#111;border-color:var(--green);font-weight:600}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+code,pre{background:var(--code);border-radius:6px;font:12.5px ui-monospace,monospace}code{padding:1px 5px}pre{padding:9px;overflow-x:auto;margin:6px 0;white-space:pre-wrap;word-break:break-word}
+label{display:block;font-size:.78rem;color:var(--sub);margin-bottom:2px}
+select,input[type=text]{font:inherit;width:100%;padding:5px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.verdict{padding:10px 12px;border-radius:8px;font-weight:600;margin-top:10px}.ok{background:var(--okbg);border:1px solid var(--green)}.no{background:var(--nobg);border:1px solid var(--red)}.warn{background:var(--warnbg);border:1px solid var(--amber)}
+.tag{display:inline-block;font-size:.72rem;padding:1px 8px;border-radius:99px;border:1px solid var(--line);color:var(--sub)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.sp{flex:1}
+.log{background:var(--code);border-radius:8px;padding:10px;font:12px/1.55 ui-monospace,monospace;min-height:120px;max-height:320px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.d{color:var(--red)}.a{color:var(--green)}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:.9rem}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}.bar>i{display:block;height:100%;background:var(--green);width:0}
+.copy{float:right;margin-left:8px}.y span{display:block;padding:0 4px}.y .hit{background:var(--okbg);border-left:3px solid var(--green)}.y .near{background:var(--warnbg);border-left:3px solid var(--amber)}.y .miss{background:var(--nobg);border-left:3px solid var(--red)}.chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}.chips code{border:1px solid var(--line)}.blk{font-size:.8rem;color:var(--sub);margin-top:6px}[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div><h1>OpenShell Demo Console</h1><div class="sub">Live policy from sandbox <code>egress-demo</code> (NemoClaw v0.0.55, OpenShell 0.0.44), exported 2026-10-23. Offline, no network calls.</div></div>
+<button id="theme">Theme</button></header>
+<div class="tabs" role="tablist" id="tabs"></div>
+
+<section id="p-predict" hidden>
+<div class="card"><h2>Predict, then reveal</h2><p class="lead">Pick Allow or Deny for each action. Your guess is checked against the <b>real</b> policy and the recorded outcome from the live sandbox.</p>
+<div class="row"><div class="sp"><div class="bar"><i id="pbar"></i></div></div><span id="pscore" class="tag">0 / 0</span><button id="preset">Restart</button></div></div>
+<div id="pq"></div>
+</section>
+
+<section id="p-lab" hidden>
+<div class="card"><h2>Network policy lab</h2><p class="lead">Build any request and see the verdict plus the rule that decided it. Each run is written to the Audit log tab in OpenShell's log format.</p>
+<div class="grid">
+<div><label>Binary (what is making the call)</label><select id="lb"></select></div>
+<div><label>Host</label><input type="text" id="lh" list="hosts" value="pypi.org"><datalist id="hosts"></datalist></div>
+<div><label>Port</label><input type="text" id="lp" value="443"></div>
+<div><label>Method</label><select id="lm"><option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option></select></div>
+<div><label>Path</label><input type="text" id="lpa" value="/pypi/idna/json"></div></div>
+<div class="row" style="margin-top:8px"><button class="primary" id="lrun">Run request</button><span class="sub">Quick tries:</span><span id="quick" class="row"></span></div>
+<div id="lv" class="verdict" hidden></div>
+</div>
+<div class="card"><h2>What if the operator applies a preset?</h2><p class="lead">Dry-run output from <code>nemoclaw egress-demo policy-add &lt;preset&gt; --dry-run</code> (hosts only; the dry-run does not print each preset's binary list, so confirm after applying).</p>
+<div id="presets" class="row"></div><div id="pnote" class="sub" style="margin-top:6px"></div></div>
+<div class="card"><h2>Filesystem check</h2><div class="grid"><div><label>Path</label><input type="text" id="fp" value="/etc/hosts"></div><div><label>Access</label><select id="fm"><option>read</option><option>write</option></select></div></div><div id="fv" class="verdict"></div><div class="sub">Landlock rules: longest matching prefix wins; <code>read_only</code> blocks writes.</div></div>
+</section>
+
+<section id="p-log" hidden>
+<div class="card"><h2>Audit trail</h2><p class="lead">What <code>openshell logs egress-demo</code> would show for the requests you ran in the lab. Denies are as valuable as allows.</p>
+<div class="row"><button id="lclear">Clear</button><span class="tag" id="lcount">0 events</span></div><div class="log" id="logbox">(run a request in the Policy lab)</div></div>
+<div class="card"><h2>Real lines captured from the sandbox</h2><pre>NET:OPEN [MED] DENIED /usr/bin/curl(825) -> example.com:443 [policy:- engine:opa] [reason:endpoint example.com:443 not in policy 'brave'; ...]
+NET:OPEN [MED] DENIED /usr/bin/curl(834) -> registry.npmjs.org:443 [policy:- engine:opa]
+NET:OPEN [INFO] ALLOWED inference.local:443
+[openshell_router] routing proxy inference request endpoint=http://127.0.0.1:8080/v1 method=GET path=/v1/models
+NET:FAIL [LOW] inference.local:443   (router could not reach vLLM bound to 127.0.0.1)</pre></div>
+</section>
+
+<section id="p-policy" hidden>
+<div class="card"><h2>Live policy map</h2><p class="lead">Exported from <code>openshell policy get egress-demo --full</code>. Click a block to see who may call what.</p><div id="pmap"></div></div>
+</section>
+
+<section id="p-deck" hidden>
+<div class="card"><h2>Command deck</h2><p class="lead">Run these in a terminal on the demo host. Tick scenes as you go (saved in this browser). Define the helper first: it wraps text in <code>sh -c</code>.</p><pre>sbx() { openshell sandbox exec -n egress-demo -- sh -c "$*"; }</pre>
+<div id="deck"></div></div>
+</section>
+</div>
+
+<script id="yamltext" type="text/plain">version: 1
+filesystem_policy:
+  include_workdir: true
+  read_only:
+  - /usr
+  - /lib
+  - /dev/urandom
+  - /app
+  - /etc
+  - /var/log
+  - /run/nvidia-persistenced
+  read_write:
+  - /tmp
+  - /dev/null
+  - /sandbox/.openclaw
+  - /sandbox/.nemoclaw
+  - /home/linuxbrew
+  - /proc
+  - /sandbox
+  - /dev/nvidiactl
+  - /dev/nvidia-uvm
+  - /dev/nvidia-uvm-tools
+  - /dev/nvidia0
+landlock:
+  compatibility: best_effort
+process:
+  run_as_user: sandbox
+  run_as_group: sandbox
+network_policies:
+  brave:
+    name: brave
+    endpoints:
+    - host: api.search.brave.com
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+      - allow:
+          method: POST
+          path: /**
+    binaries:
+    - path: /usr/local/bin/node
+    - path: /usr/bin/node
+    - path: /usr/bin/curl
+  brew:
+    name: brew
+    endpoints:
+    - host: formulae.brew.sh
+      port: 443
+      tls: skip
+      access: full
+    - host: github.com
+      port: 443
+      tls: skip
+      access: full
+    - host: ghcr.io
+      port: 443
+      tls: skip
+      access: full
+    - host: pkg-containers.githubusercontent.com
+      port: 443
+      tls: skip
+      access: full
+    - host: objects.githubusercontent.com
+      port: 443
+      tls: skip
+      access: full
+    - host: raw.githubusercontent.com
+      port: 443
+      tls: skip
+      access: full
+    binaries:
+    - path: /usr/bin/curl
+    - path: /usr/bin/git
+    - path: /usr/local/bin/brew
+    - path: /home/linuxbrew/.linuxbrew/bin/brew
+    - path: /home/linuxbrew/.linuxbrew/bin/*
+    - path: /home/linuxbrew/.linuxbrew/Homebrew/bin/*
+  clawhub:
+    name: clawhub
+    endpoints:
+    - host: clawhub.ai
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+      - allow:
+          method: POST
+          path: /**
+    binaries:
+    - path: /usr/local/bin/openclaw
+    - path: /usr/local/bin/node
+  huggingface:
+    name: huggingface
+    endpoints:
+    - host: huggingface.co
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+    - host: cdn-lfs.huggingface.co
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+    - host: router.huggingface.co
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+      - allow:
+          method: POST
+          path: /**
+    binaries:
+    - path: /usr/local/bin/python3
+    - path: /usr/local/bin/node
+  managed_inference:
+    name: managed_inference
+    endpoints:
+    - host: inference.local
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+      - allow:
+          method: POST
+          path: /**
+    binaries:
+    - path: /usr/local/bin/openclaw
+    - path: /usr/local/bin/node
+    - path: /usr/bin/node
+    - path: /usr/bin/curl
+    - path: /usr/bin/python3
+  npm_registry:
+    name: npm_registry
+    endpoints:
+    - host: registry.npmjs.org
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+    binaries:
+    - path: /usr/local/bin/openclaw
+  npm_yarn:
+    name: npm_yarn
+    endpoints:
+    - host: registry.npmjs.org
+      port: 443
+      tls: skip
+      access: full
+    - host: registry.yarnpkg.com
+      port: 443
+      tls: skip
+      access: full
+    binaries:
+    - path: /usr/local/bin/npm*
+    - path: /usr/local/bin/npx*
+    - path: /usr/local/bin/node*
+    - path: /usr/local/bin/yarn*
+    - path: /usr/bin/npm*
+    - path: /usr/bin/node*
+  nvidia:
+    name: nvidia
+    endpoints:
+    - host: integrate.api.nvidia.com
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: POST
+          path: /v1/chat/completions
+      - allow:
+          method: POST
+          path: /v1/completions
+      - allow:
+          method: POST
+          path: /v1/embeddings
+      - allow:
+          method: GET
+          path: /v1/models
+      - allow:
+          method: GET
+          path: /v1/models/**
+    - host: inference-api.nvidia.com
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: POST
+          path: /v1/chat/completions
+      - allow:
+          method: POST
+          path: /v1/completions
+      - allow:
+          method: POST
+          path: /v1/embeddings
+      - allow:
+          method: GET
+          path: /v1/models
+      - allow:
+          method: GET
+          path: /v1/models/**
+    binaries:
+    - path: /usr/local/bin/openclaw
+  openclaw-pricing:
+    name: openclaw-pricing
+    endpoints:
+    - host: raw.githubusercontent.com
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /BerriAI/litellm/main/model_prices_and_context_window.json
+    - host: openrouter.ai
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /api/v1/models
+    binaries:
+    - path: /usr/local/bin/node
+    - path: /usr/bin/node
+  openclaw_api:
+    name: openclaw_api
+    endpoints:
+    - host: openclaw.ai
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+      - allow:
+          method: POST
+          path: /**
+    binaries:
+    - path: /usr/local/bin/openclaw
+    - path: /usr/local/bin/node
+  openclaw_docs:
+    name: openclaw_docs
+    endpoints:
+    - host: docs.openclaw.ai
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+    binaries:
+    - path: /usr/local/bin/openclaw
+  pypi:
+    name: pypi
+    endpoints:
+    - host: pypi.org
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+      - allow:
+          method: HEAD
+          path: /**
+    - host: files.pythonhosted.org
+      port: 443
+      protocol: rest
+      enforcement: enforce
+      rules:
+      - allow:
+          method: GET
+          path: /**
+      - allow:
+          method: HEAD
+          path: /**
+    binaries:
+    - path: /usr/bin/python3*
+    - path: /usr/bin/pip*
+    - path: /usr/local/bin/python3*
+    - path: /usr/local/bin/pip*
+    - path: /sandbox/.venv/bin/python*
+    - path: /sandbox/.venv/bin/pip*
+    - path: /sandbox/.uv/python/**/python*
+    - path: /sandbox/.local/bin/pip*
+</script>
+<script id="policy" type="application/json">{"version": 1, "filesystem_policy": {"include_workdir": true, "read_only": ["/usr", "/lib", "/dev/urandom", "/app", "/etc", "/var/log", "/run/nvidia-persistenced"], "read_write": ["/tmp", "/dev/null", "/sandbox/.openclaw", "/sandbox/.nemoclaw", "/home/linuxbrew", "/proc", "/sandbox", "/dev/nvidiactl", "/dev/nvidia-uvm", "/dev/nvidia-uvm-tools", "/dev/nvidia0"]}, "landlock": {"compatibility": "best_effort"}, "process": {"run_as_user": "sandbox", "run_as_group": "sandbox"}, "network_policies": {"brave": {"name": "brave", "endpoints": [{"host": "api.search.brave.com", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}, {"allow": {"method": "POST", "path": "/**"}}]}], "binaries": [{"path": "/usr/local/bin/node"}, {"path": "/usr/bin/node"}, {"path": "/usr/bin/curl"}]}, "brew": {"name": "brew", "endpoints": [{"host": "formulae.brew.sh", "port": 443, "tls": "skip", "access": "full"}, {"host": "github.com", "port": 443, "tls": "skip", "access": "full"}, {"host": "ghcr.io", "port": 443, "tls": "skip", "access": "full"}, {"host": "pkg-containers.githubusercontent.com", "port": 443, "tls": "skip", "access": "full"}, {"host": "objects.githubusercontent.com", "port": 443, "tls": "skip", "access": "full"}, {"host": "raw.githubusercontent.com", "port": 443, "tls": "skip", "access": "full"}], "binaries": [{"path": "/usr/bin/curl"}, {"path": "/usr/bin/git"}, {"path": "/usr/local/bin/brew"}, {"path": "/home/linuxbrew/.linuxbrew/bin/brew"}, {"path": "/home/linuxbrew/.linuxbrew/bin/*"}, {"path": "/home/linuxbrew/.linuxbrew/Homebrew/bin/*"}]}, "clawhub": {"name": "clawhub", "endpoints": [{"host": "clawhub.ai", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}, {"allow": {"method": "POST", "path": "/**"}}]}], "binaries": [{"path": "/usr/local/bin/openclaw"}, {"path": "/usr/local/bin/node"}]}, "huggingface": {"name": "huggingface", "endpoints": [{"host": "huggingface.co", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}]}, {"host": "cdn-lfs.huggingface.co", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}]}, {"host": "router.huggingface.co", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}, {"allow": {"method": "POST", "path": "/**"}}]}], "binaries": [{"path": "/usr/local/bin/python3"}, {"path": "/usr/local/bin/node"}]}, "managed_inference": {"name": "managed_inference", "endpoints": [{"host": "inference.local", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}, {"allow": {"method": "POST", "path": "/**"}}]}], "binaries": [{"path": "/usr/local/bin/openclaw"}, {"path": "/usr/local/bin/node"}, {"path": "/usr/bin/node"}, {"path": "/usr/bin/curl"}, {"path": "/usr/bin/python3"}]}, "npm_registry": {"name": "npm_registry", "endpoints": [{"host": "registry.npmjs.org", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}]}], "binaries": [{"path": "/usr/local/bin/openclaw"}]}, "npm_yarn": {"name": "npm_yarn", "endpoints": [{"host": "registry.npmjs.org", "port": 443, "tls": "skip", "access": "full"}, {"host": "registry.yarnpkg.com", "port": 443, "tls": "skip", "access": "full"}], "binaries": [{"path": "/usr/local/bin/npm*"}, {"path": "/usr/local/bin/npx*"}, {"path": "/usr/local/bin/node*"}, {"path": "/usr/local/bin/yarn*"}, {"path": "/usr/bin/npm*"}, {"path": "/usr/bin/node*"}]}, "nvidia": {"name": "nvidia", "endpoints": [{"host": "integrate.api.nvidia.com", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "POST", "path": "/v1/chat/completions"}}, {"allow": {"method": "POST", "path": "/v1/completions"}}, {"allow": {"method": "POST", "path": "/v1/embeddings"}}, {"allow": {"method": "GET", "path": "/v1/models"}}, {"allow": {"method": "GET", "path": "/v1/models/**"}}]}, {"host": "inference-api.nvidia.com", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "POST", "path": "/v1/chat/completions"}}, {"allow": {"method": "POST", "path": "/v1/completions"}}, {"allow": {"method": "POST", "path": "/v1/embeddings"}}, {"allow": {"method": "GET", "path": "/v1/models"}}, {"allow": {"method": "GET", "path": "/v1/models/**"}}]}], "binaries": [{"path": "/usr/local/bin/openclaw"}]}, "openclaw-pricing": {"name": "openclaw-pricing", "endpoints": [{"host": "raw.githubusercontent.com", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/BerriAI/litellm/main/model_prices_and_context_window.json"}}]}, {"host": "openrouter.ai", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/api/v1/models"}}]}], "binaries": [{"path": "/usr/local/bin/node"}, {"path": "/usr/bin/node"}]}, "openclaw_api": {"name": "openclaw_api", "endpoints": [{"host": "openclaw.ai", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}, {"allow": {"method": "POST", "path": "/**"}}]}], "binaries": [{"path": "/usr/local/bin/openclaw"}, {"path": "/usr/local/bin/node"}]}, "openclaw_docs": {"name": "openclaw_docs", "endpoints": [{"host": "docs.openclaw.ai", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}]}], "binaries": [{"path": "/usr/local/bin/openclaw"}]}, "pypi": {"name": "pypi", "endpoints": [{"host": "pypi.org", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}, {"allow": {"method": "HEAD", "path": "/**"}}]}, {"host": "files.pythonhosted.org", "port": 443, "protocol": "rest", "enforcement": "enforce", "rules": [{"allow": {"method": "GET", "path": "/**"}}, {"allow": {"method": "HEAD", "path": "/**"}}]}], "binaries": [{"path": "/usr/bin/python3*"}, {"path": "/usr/bin/pip*"}, {"path": "/usr/local/bin/python3*"}, {"path": "/usr/local/bin/pip*"}, {"path": "/sandbox/.venv/bin/python*"}, {"path": "/sandbox/.venv/bin/pip*"}, {"path": "/sandbox/.uv/python/**/python*"}, {"path": "/sandbox/.local/bin/pip*"}]}}}</script>
+<script>
+const $=s=>document.querySelector(s),H=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e},esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const POL=JSON.parse($('#policy').textContent),NET=POL.network_policies;
+// theme
+const root=document.documentElement;try{const t=localStorage.getItem('th');if(t)root.dataset.theme=t}catch(e){}
+$('#theme').onclick=()=>{const d=root.dataset.theme?root.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;root.dataset.theme=d?'light':'dark';try{localStorage.setItem('th',root.dataset.theme)}catch(e){}};
+const YT=$('#yamltext').textContent.replace(/\n$/,'').split('\n');
+const SEC={top:[]};(()=>{let inNet=false,name=null;YT.forEach(l=>{if(/^network_policies:/.test(l)){inNet=true;return}if(/^[a-z_]+:/.test(l)){inNet=false;name=null;SEC.top.push(l);return}if(inNet){const m=l.match(/^  ([A-Za-z0-9_-]+):\s*$/);if(m){name=m[1];SEC[name]=[l]}else if(name)SEC[name].push(l)}else SEC.top.push(l)})})();
+function snip(lines,ctx){return '<pre class="y">'+lines.map(l=>{let c='';if(ctx){const m=l.match(/^\s*- path: (\S+)/),h=l.match(/^\s*- host: (\S+)/);if(m&&ctx.bin)c=g2r(m[1]).test(ctx.bin)?'hit':'miss';else if(h&&h[1]===ctx.host)c='hit';else if(h&&ctx.dom&&h[1].endsWith(ctx.dom))c='near';else if(ctx.fsHit&&l.trim().replace(/^- /,'')===ctx.fsHit)c='hit'}return '<span class="'+c+'">'+esc(l)+'</span>'}).join('')+'</pre>'}
+// ---- policy engine (mirrors the rules visible in the exported YAML)
+const g2r=g=>new RegExp('^'+g.replace(/[.+?^${}()|[\]\\]/g,'\\$&').replace(/\*\*/g,'\u0000').replace(/\*/g,'[^/]*').replace(/\u0000/g,'.*')+'$');
+const extra={}; // presets enabled in the lab: name -> {hosts}
+function evalNet(bin,host,port,method,path){
+  let near=null;
+  for(const [n,p] of Object.entries(NET)){
+    for(const e of p.endpoints){
+      if(e.host!==host||+e.port!==+port)continue;
+      const binOk=(p.binaries||[]).some(b=>g2r(b.path).test(bin));
+      if(!binOk){near=near||`host is allowed in "${n}" but ${bin} is not one of its binaries`;continue}
+      if(e.access==='full')return{ok:1,rule:n,why:`"${n}" grants ${bin} full access to ${host}:${port}`};
+      const r=(e.rules||[]).find(r=>r.allow&&r.allow.method.toUpperCase()===method&&g2r(r.allow.path).test(path));
+      if(r)return{ok:1,rule:n,why:`"${n}": ${method} ${r.allow.path} allowed for ${bin}`};
+      near=`binary and host match "${n}" but ${method} ${path} is not an allowed method+path`;
+    }
+  }
+  for(const [n,x] of Object.entries(extra)) if(x.hosts.includes(host)) return{ok:2,rule:n,why:`preset "${n}" would open ${host}, but its binary list is not shown by --dry-run, so this is unverified`};
+  return{ok:0,rule:'-',why:near||`${host}:${port} is not in any policy block (default deny)`};
+}
+function evalFs(path,mode){const fp=POL.filesystem_policy,u=(p,b)=>p===b||p.startsWith(b.replace(/\/$/,'')+'/');
+  const rw=(fp.read_write||[]).filter(b=>u(path,b)).sort((a,b)=>b.length-a.length)[0],ro=(fp.read_only||[]).filter(b=>u(path,b)).sort((a,b)=>b.length-a.length)[0];
+  const best=[rw,ro].filter(Boolean).sort((a,b)=>b.length-a.length)[0];
+  if(!best)return{ok:0,why:'no Landlock rule covers this path'};
+  return best===rw?{ok:1,why:`read_write rule ${best}`}:(mode==='read'?{ok:1,why:`read_only rule ${best} allows reads`}:{ok:0,why:`read_only rule ${best} blocks writes`})}
+// ---- tabs
+const tabs=[['predict','Predict'],['lab','Policy lab'],['log','Audit log'],['policy','Policy map'],['deck','Command deck']];
+tabs.forEach(([id,l],i)=>{const b=H('button','tab',l);b.setAttribute('role','tab');b.dataset.id=id;b.onclick=()=>show(id);$('#tabs').append(b)});
+function show(id){tabs.forEach(([t])=>$('#p-'+t).hidden=t!==id);document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.id===id));try{location.hash=id}catch(e){}}
+// ---- predict scenarios (real outcomes captured on egress-demo)
+const SC=[
+ {t:'curl to example.com',cmd:"curl -sS -m10 https://example.com",req:['/usr/bin/curl','example.com',443,'GET','/'],real:'CONNECT tunnel failed, response 403 (log: DENIED /usr/bin/curl -> example.com:443)'},
+ {t:'curl to pypi.org (the pypi preset is applied!)',cmd:"curl https://pypi.org/pypi/idna/json",req:['/usr/bin/curl','pypi.org',443,'GET','/pypi/idna/json'],real:'403. The pypi preset only lists python3*/pip* binaries, not curl.'},
+ {t:'pip downloading the same package',cmd:"pip download idna -d /tmp/p -q",req:['/usr/bin/pip3','pypi.org',443,'GET','/pypi/idna/json'],real:'Succeeded: idna-3.20-py3-none-any.whl downloaded.'},
+ {t:'curl to the hosted NVIDIA API',cmd:"curl https://integrate.api.nvidia.com/v1/models",req:['/usr/bin/curl','integrate.api.nvidia.com',443,'GET','/v1/models'],real:'403. That endpoint is only open to /usr/local/bin/openclaw.'},
+ {t:'curl to inference.local (managed inference)',cmd:"curl https://inference.local/v1/models",req:['/usr/bin/curl','inference.local',443,'GET','/v1/models'],real:'Policy ALLOWED it and routed to the model, but the router could not reach vLLM (bound to loopback): "inference service unavailable".',note:'Allowed by policy, failed downstream. Different failure source.'},
+ {t:'curl to api.github.com (preset not applied)',cmd:"curl https://api.github.com/",req:['/usr/bin/curl','api.github.com',443,'GET','/'],real:'403. github preset is opt-in.'},
+ {t:'node fetching a package from npm',cmd:"node -e \"fetch('https://registry.npmjs.org/')\"",req:['/usr/local/bin/node','registry.npmjs.org',443,'GET','/'],real:'Not run live; predicted from the policy (npm_yarn lists node*).',pred:1},
+ {fs:['/etc/x','write'],t:'write /etc/x',cmd:"touch /etc/x",real:'touch: cannot touch /etc/x: Permission denied'},
+ {fs:['/tmp/ok','write'],t:'write /tmp/ok',cmd:"touch /tmp/ok",real:'Succeeded.'},
+ {t:'Escalate: unshare a new network namespace',cmd:"unshare -n true",fixed:{ok:0,why:'seccomp/capabilities block it'},real:'unshare failed: Operation not permitted'}];
+function idxHasNear(host,dom){return Object.values(NET).some(x=>x.endpoints.some(e=>e.host!==host&&e.host.endsWith(dom)))}
+function policyView(s,revealed,r){const d=H('details');d.open=true;let h='<summary><b>Policy to consult</b> <span class="sub">(from the live YAML; highlights appear after you answer)</span></summary>';
+  if(s.req){const [bin,host,port,m,p]=s.req;h+=`<div class="chips"><code>binary ${esc(bin)}</code><code>host ${esc(host)}:${port}</code><code>${esc(m)} ${esc(p)}</code></div>`;
+   const rel=Object.keys(NET).filter(n=>NET[n].endpoints.some(e=>e.host===host));
+   if(!rel.length){const hits=YT.filter(l=>l.includes(host)).length,dom=host.split('.').slice(-2).join('.');
+    const idx=[];Object.keys(SEC).filter(n=>n!=='top').forEach(n=>{idx.push(SEC[n][0]);SEC[n].forEach(l=>{if(/^\s*- host:/.test(l))idx.push(l)})});
+    h+=`<div class="blk">Search the YAML for <code>${esc(host)}</code>: <b>${hits} matches</b>. No block lists this host, so the default applies: <b>deny</b>.</div><div class="blk">Every block and host in the policy (real lines from the YAML):</div>`+snip(['network_policies:',...idx],revealed?{host,dom}:null);
+    if(revealed&&idxHasNear(host,dom))h+=`<div class="blk">Amber = a listed host in the same domain (<code>${esc(dom)}</code>), which is <b>not</b> the same host: matching is on the exact host (and port).</div>`}
+   else rel.forEach(n=>{h+=`<div class="blk">block <b>${esc(n)}</b></div>`+snip(SEC[n],revealed?{bin,host}:null)});
+   if(revealed&&rel.length)h+='<div class="blk">Green = matches this request. Red = a binary pattern that does not match. A rule only applies if the <b>binary</b> and the <b>host:port</b> and a <b>method+path</b> rule all match.</div>'}
+  else if(s.fs){h+=`<div class="chips"><code>${esc(s.fs[1])} ${esc(s.fs[0])}</code></div>`;h+=snip(SEC.top.slice(0,SEC.top.findIndex(l=>/^landlock:/.test(l))),revealed?{fsHit:null}:null);h+='<div class="blk">Longest matching path wins; <code>read_only</code> blocks writes.</div>'}
+  else{h+=snip(SEC.top.slice(SEC.top.findIndex(l=>/^landlock:/.test(l))),null);h+='<div class="blk">This YAML has no syscall list: seccomp and capability limits are applied by the sandbox runtime, not shown here.</div>'}
+  d.innerHTML=h;return d}
+let ans={};function resultOf(s){return s.fs?evalFs(...s.fs):s.fixed?s.fixed:evalNet(...s.req)}
+function renderPredict(){const q=$('#pq');q.innerHTML='';let n=0,c=0;
+ SC.forEach((s,i)=>{const r=resultOf(s),card=H('div','card');const a=ans[i];
+  card.innerHTML=`<b>${i+1}. ${esc(s.t)}</b><pre>${esc(s.cmd)}</pre>`;
+  card.append(policyView(s,!!ans[i],r));
+  const row=H('div','row');
+  ['Allow','Deny'].forEach(l=>{const b=H('button',a===l?'primary':'',l);b.disabled=a!=null;b.onclick=()=>{ans[i]=l;renderPredict()};row.append(b)});card.append(row);
+  if(a){n++;const right=(a==='Allow')===(r.ok===1);if(right)c++;
+   const v=H('div','verdict '+(right?'ok':'no'),`${right?'Correct':'Not quite'}: policy says <b>${r.ok===1?'ALLOW':'DENY'}</b>. ${esc(r.why)}`);card.append(v);
+   card.append(H('div','sub','<b>Live result:</b> '+esc(s.real)+(s.note?' <i>'+esc(s.note)+'</i>':'')+(s.pred?' <span class="tag">predicted</span>':'')))}
+  q.append(card)});
+ $('#pscore').textContent=c+' / '+n;$('#pbar').style.width=(n*100/SC.length)+'%'}
+$('#preset').onclick=()=>{ans={};renderPredict()};renderPredict();
+// ---- lab
+const bins=[...new Set(Object.values(NET).flatMap(p=>(p.binaries||[]).map(b=>b.path.replace(/\*+$/,'')).filter(b=>!b.includes('**'))).concat(['/usr/bin/curl','/usr/bin/pip3','/usr/bin/python3','/usr/bin/git','/usr/bin/wget']))].sort();
+bins.forEach(b=>$('#lb').append(H('option','',esc(b))));$('#lb').value='/usr/bin/curl';
+[...new Set(Object.values(NET).flatMap(p=>p.endpoints.map(e=>e.host)).concat(['example.com','api.github.com','api.telegram.org','evil.example.com']))].forEach(h=>$('#hosts').append(H('option','',h)));
+const logs=[];let pid=900;
+function fmtLog(bin,host,port,r){const t=(Date.now()/1000).toFixed(3);return r.ok===1?`<span class="a">[${t}] NET:OPEN [INFO] ALLOWED ${esc(bin)}(${++pid}) -> ${esc(host)}:${port} [policy:${esc(r.rule)} engine:opa]</span>`:`<span class="d">[${t}] NET:OPEN [MED] DENIED ${esc(bin)}(${++pid}) -> ${esc(host)}:${port} [policy:- engine:opa] [reason:${esc(r.why)}]</span>`}
+function runLab(){const bin=$('#lb').value,host=$('#lh').value.trim(),port=$('#lp').value,m=$('#lm').value,p=$('#lpa').value;const r=evalNet(bin,host,port,m,p);
+ const v=$('#lv');v.hidden=false;v.className='verdict '+(r.ok===1?'ok':r.ok===2?'warn':'no');v.innerHTML=`${r.ok===1?'ALLOW':r.ok===2?'UNVERIFIED':'DENY'}: ${esc(r.why)}`;
+ logs.push(fmtLog(bin,host,port,r));$('#logbox').innerHTML=logs.slice().reverse().join('\n');$('#lcount').textContent=logs.length+' events'}
+$('#lrun').onclick=runLab;$('#lclear').onclick=()=>{logs.length=0;$('#logbox').textContent='(cleared)';$('#lcount').textContent='0 events'};
+[['curl→pypi','/usr/bin/curl','pypi.org','GET','/pypi/idna/json'],['pip→pypi','/usr/bin/pip3','pypi.org','GET','/pypi/idna/json'],['openclaw→nvidia POST','/usr/local/bin/openclaw','integrate.api.nvidia.com','POST','/v1/chat/completions'],['curl→github','/usr/bin/curl','api.github.com','GET','/']].forEach(([l,b,h,m,p])=>{const x=H('button','',l);x.onclick=()=>{$('#lb').value=bins.includes(b)?b:(bins.push(b),$('#lb').append(H('option','',esc(b))),b);$('#lh').value=h;$('#lm').value=m;$('#lpa').value=p;runLab()};$('#quick').append(x)});
+const PRE={github:['github.com','api.github.com'],telegram:['api.telegram.org'],slack:['slack.com','api.slack.com','hooks.slack.com','wss-primary.slack.com','wss-backup.slack.com'],'local-inference':['host.openshell.internal']};
+Object.keys(PRE).forEach(n=>{const l=H('label','',`<input type="checkbox"> ${n}`);l.style.cssText='display:inline-flex;gap:6px;align-items:center;font-size:.9rem;color:var(--ink)';l.querySelector('input').onchange=e=>{e.target.checked?extra[n]={hosts:PRE[n]}:delete extra[n];$('#pnote').textContent=Object.keys(extra).length?'Hypothetical presets on: '+Object.keys(extra).join(', ')+'. Re-run your request in the lab above. In reality use: nemoclaw egress-demo policy-add <preset> --yes':''};$('#presets').append(l)});
+function fs(){const r=evalFs($('#fp').value.trim(),$('#fm').value);const v=$('#fv');v.className='verdict '+(r.ok?'ok':'no');v.textContent=(r.ok?'ALLOW: ':'DENY: ')+r.why}
+$('#fp').oninput=fs;$('#fm').onchange=fs;fs();
+// ---- policy map
+const pm=$('#pmap');
+const srch=H('input');srch.type='text';srch.placeholder='Filter: host, binary, preset name...';srch.style.marginBottom='8px';pm.append(srch);
+srch.oninput=()=>{const q=srch.value.toLowerCase();pm.querySelectorAll('details.blk2').forEach(d=>d.style.display=d.textContent.toLowerCase().includes(q)?'':'none')};
+pm.append(H('div','sub',`Process runs as <b>${POL.process.run_as_user}</b>; Landlock <b>${POL.landlock.compatibility}</b>. Read-only: ${POL.filesystem_policy.read_only.map(x=>'<code>'+x+'</code>').join(' ')}<br>Read-write: ${POL.filesystem_policy.read_write.map(x=>'<code>'+x+'</code>').join(' ')}`));
+Object.entries(NET).forEach(([n,p])=>{const d=document.createElement('details');d.className='blk2';d.style.margin='8px 0';
+ d.innerHTML=`<summary><b>${esc(n)}</b> <span class="tag">${p.endpoints.length} endpoint(s)</span> <span class="tag">${(p.binaries||[]).length} binaries</span></summary><div class="scroll"><table><tr><th>Host:port</th><th>Access</th></tr>${p.endpoints.map(e=>`<tr><td><code>${esc(e.host)}:${e.port}</code></td><td>${e.access==='full'?'full tunnel':(e.rules||[]).map(r=>esc(r.allow.method+' '+r.allow.path)).join('<br>')}</td></tr>`).join('')}</table></div><div class="sub">Binaries: ${(p.binaries||[]).map(b=>'<code>'+esc(b.path)+'</code>').join(' ')}</div><details><summary class="sub">YAML for this block</summary>${snip(SEC[n]||[],null)}</details>`;pm.append(d)});
+const raw=document.createElement('details');raw.innerHTML='<summary><b>Full policy YAML</b> (openshell policy get egress-demo --full)</summary>'+snip(YT,null);pm.append(raw);
+// ---- deck
+const DECK=[
+ ['3 · Show the policy','openshell policy get egress-demo --full | less'],
+ ['4a · open internet (deny)','sbx \'curl -sS -m10 https://example.com\''],
+ ['4b · curl to pypi (deny)','sbx \'curl -sS -m10 -o /dev/null -w "%{http_code}\\n" https://pypi.org/pypi/idna/json\''],
+ ['4c · pip same package (allow)','sbx \'pip download idna -d /tmp/p -q; ls /tmp/p\''],
+ ['4d · write /etc (deny) and /tmp (allow)','sbx \'touch /etc/x; touch /tmp/ok && echo tmp-ok\''],
+ ['4e · audit trail','openshell logs egress-demo | grep -E "DENIED|ALLOWED" | tail -12'],
+ ['5 · secret in env (redacted)','sbx \'env | grep -iE "key|token|secret" | sed "s/=.*/=<redacted>/"\''],
+ ['6 · preview preset','nemoclaw egress-demo policy-add github --dry-run'],
+ ['6 · apply then remove','nemoclaw egress-demo policy-add github --yes && nemoclaw egress-demo policy-remove github --yes'],
+ ['Cleanup','sbx \'rm -rf /tmp/p /tmp/ok\'']];
+let st={};try{st=JSON.parse(localStorage.getItem('deck')||'{}')}catch(e){}
+DECK.forEach(([t,c],i)=>{const d=H('div','card');d.innerHTML=`<label style="display:flex;gap:8px;align-items:center;color:var(--ink);font-size:.95rem"><input type="checkbox" ${st[i]?'checked':''}><b>${esc(t)}</b></label><button class="copy">Copy</button><pre>${esc(c)}</pre>`;
+ d.querySelector('input').onchange=e=>{st[i]=e.target.checked;try{localStorage.setItem('deck',JSON.stringify(st))}catch(_){}};
+ d.querySelector('.copy').onclick=e=>{try{navigator.clipboard.writeText(c);e.target.textContent='Copied'}catch(_){e.target.textContent='Select text'}};$('#deck').append(d)});
+show((location.hash||'#predict').slice(1).replace(/[^a-z]/g,'')||'predict');
+if(!document.getElementById('p-'+(location.hash||'#predict').slice(1)))show('predict');
+</script>
+</body>
+</html>
