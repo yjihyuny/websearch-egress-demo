@@ -2,3 +2,4 @@ state/baselines/
 state/logs/
 __pycache__/
 *.pyc
+.venv-media/

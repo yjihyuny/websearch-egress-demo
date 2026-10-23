@@ -8,6 +8,23 @@ denied), the YAML rule that decided it, and lets you edit the policy and re-run.
 Tested on NemoClaw v0.0.55, OpenShell 0.0.44, Ubuntu 24.04 aarch64 (DGX Spark class), local vLLM Nemotron model.
 NemoClaw is alpha software: flags change between releases (see `docs/SETUP_E2E.md` section 9).
 
+## See it in action
+Replays of real runs recorded from a sandbox (GIFs are generated from the saved traces by `tools/record_demo.py`):
+
+**An allowed fetch, then a denied one.** The agent calls `http_get` inside the sandbox; the viewer shows the policy question, the verdict and the rule that decided it.
+
+![Allowed versus denied fetch](docs/media/allowed-vs-denied.gif)
+
+**A research run with a blocked source.** Parallel researchers fetch several URLs; one is denied by the policy, so the report is partial and says what it could not verify.
+
+![Research run with a blocked source](docs/media/research-partial.gif)
+
+**Change the policy live.** The Policy editor allows a host for named binaries, previews the exact `openshell policy update`, and resets to a stored default. The Policy diff tab compares any two revisions.
+
+![Policy editor](docs/media/policy-editor.png)
+
+Try it without a sandbox: open `web/langgraph_viewer.html` in a browser (replays work offline), or serve the repo with GitHub Pages and link to `web/langgraph_viewer.html`.
+
 ## Layout
 | Path | Purpose |
 |---|---|
@@ -18,6 +35,8 @@ NemoClaw is alpha software: flags change between releases (see `docs/SETUP_E2E.m
 | `web/langgraph_viewer.html` | The UI: live runs, step replay (with delete), allowed/denied per call, Policy editor (with default-policy card), Policy diff |
 | `web/demo_console.html`, `web/visual_guide.html` | Offline explainers: predict allow/deny, policy map, stack diagram |
 | `scripts/` | `onboard.sh`, `setup_sandbox.sh`, `run.sh`, `demo.sh` (shell-level checks), `verify_env.sh`, `access.sh` |
+| `tools/record_demo.py` | Regenerates the GIFs and screenshots in `docs/media/` with a headless browser |
+| `docs/media/` | README images: `allowed-vs-denied.gif`, `research-partial.gif`, `replay-denied.png`, `policy-editor.png`, `policy-diff.png`, `viewer-live.png` |
 | `tests/smoke_test.sh` | End-to-end check of server + agent against a live sandbox |
 | `build/` | Templates and policy export used to regenerate the HTML (`python3 build/build_all.py`) |
 | `state/` | Created at run time: default-policy snapshot and the policy change log (git-ignored) |
@@ -79,6 +98,16 @@ openshell sandbox exec -n egress-demo -- sh -c "cd /sandbox && GRAPH=react PROMP
 `openshell sandbox exec` runs a program, not a shell string: wrap commands in `sh -c '...'`. It occasionally stalls before starting; retry.
 - **Trace format:** `{"task","prompt","graph","model","base_url","events":[...]}`. react events are `tool_call`, `tool_result`, `final`; research events are `plan`, `research`, `final`. Paste one into the viewer's "Offline" box, or add it to `build/traces_embedded.json` and run `python3 build/build_all.py`.
 - **Adding a tool:** add a `@tool` function, append it to `TOOLS`, add a case to `check()` in `build/lg_viewer.template.html` so predictions cover it, rebuild, re-upload with `scripts/setup_sandbox.sh`.
+
+## Regenerating the README media
+```bash
+python3 -m venv .venv-media && .venv-media/bin/pip install playwright pillow
+.venv-media/bin/playwright install chromium            # one-time browser download
+.venv-media/bin/python tools/record_demo.py            # GIFs from the saved traces: offline, no sandbox, no side effects
+SANDBOX=egress-demo bash scripts/run.sh &              # optional: also capture the live pages
+.venv-media/bin/python tools/record_demo.py --live http://127.0.0.1:8890
+```
+`--live` only reads (policy view); it never applies a policy change or runs an agent. To record the full block, allow, re-run flow as a video, use your OS screen recorder on the live viewer and convert with `ffmpeg -i demo.mp4 -vf "fps=8,scale=1000:-1" -loop 0 docs/media/flow.gif`; keep it under about 5 MB so GitHub renders it inline.
 
 ## Safety notes
 - The server binds `127.0.0.1` only and checks Host/Origin; reach it from a laptop with an SSH tunnel to that one port.
